@@ -1,0 +1,78 @@
+.picker {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.legend {
+  padding: 0;
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+/* Радиокнопку прячем визуально, но оставляем в дереве доступности и в порядке табуляции */
+.option input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.option:has(input:focus-visible) {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+/* В сайдбаре 248 px: «Фиолетовая» с иконкой в половину ширины не помещается — одна колонка */
+.side .grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+}
+.side .legend {
+  color: var(--color-side-muted);
+}
+.side .option {
+  color: var(--color-side-muted);
+  border-color: var(--color-side-line);
+}
+.side .option:hover,
+.side .option:has(input:checked) {
+  background: var(--color-side-active);
+  color: var(--color-on-side);
+  border-color: var(--color-side-active);
+}
+.side .option:has(input:focus-visible) {
+  outline-color: #ffffff;
+}
+.page .legend {
+  color: var(--color-muted);
+}
+.page .option {
+  color: var(--color-ink);
+  border-color: var(--color-line);
+  background: var(--color-surface);
+}
+.page .option:has(input:checked) {
+  border-color: var(--color-accent);
+  color: var(--color-accent-text);
+  font-weight: 600;
+}

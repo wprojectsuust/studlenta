@@ -10,6 +10,7 @@ import { useCategories, useQueue } from "@/lib/queries";
 import {
   BellIcon, BookmarkIcon, CalendarIcon, CapIcon, FeedIcon, InfoIcon, PenIcon, PlusIcon, SearchIcon, ShieldIcon, UserIcon,
 } from "./icons";
+import { CategoryIcon } from "./CategoryIcon";
 import { SkinPicker } from "./SkinPicker";
 import { VerifyEmailBanner } from "./VerifyEmailBanner";
 import styles from "./Shell.module.css";
@@ -57,14 +58,13 @@ function Sidebar() {
         {categories.data?.map((c) => (
           <Link key={c.id} href={activeCategory === c.slug ? "/" : `/?category=${c.slug}`} className={styles.navItem}
             aria-current={current(activeCategory === c.slug)} style={{ minHeight: 40, fontSize: 14 }}>
-            <span className={styles.dot} style={{ background: c.color }} />
+            <CategoryIcon slug={c.slug} color={c.color} />
             {c.name}
             <span className={styles.count} aria-label={`${c.upcoming_count} предстоящих`}>{c.upcoming_count}</span>
           </Link>
         ))}
       </nav>
-      <div className={styles.group} style={{ marginTop: "auto", padding: "18px 12px 0" }}>
-        <span className={styles.groupTitle} style={{ padding: 0 }}>Скин</span>
+      <div className={styles.group} style={{ marginTop: "auto", padding: "18px 4px 0" }}>
         <SkinPicker />
       </div>
     </aside>

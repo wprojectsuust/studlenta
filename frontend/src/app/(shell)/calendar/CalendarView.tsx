@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useRef, type KeyboardEvent } from "react";
+import { CategoryIcon } from "@/components/CategoryIcon";
 import { EventCard } from "@/components/EventCard";
 import { EmptyState, LoginToast } from "@/components/Feedback";
 import { ChevronLeft, ChevronRight } from "@/components/icons";
@@ -121,7 +122,7 @@ export function CalendarView() {
       <ul aria-label="Цвета категорий" style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px", margin: 0, padding: 0, listStyle: "none", fontSize: 13, color: "var(--color-muted)" }}>
         {categories.data?.map((c) => (
           <li key={c.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 3, background: c.color }} />{c.name}
+            <CategoryIcon slug={c.slug} color={c.color} size={20} />{c.name}
           </li>
         ))}
       </ul>

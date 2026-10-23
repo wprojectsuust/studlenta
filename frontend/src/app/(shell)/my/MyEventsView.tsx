@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Cover } from "@/components/Cover";
 import { CardSkeleton, EmptyState, ErrorBanner } from "@/components/Feedback";
 import { PlusIcon } from "@/components/icons";
+import { SkinPicker } from "@/components/SkinPicker";
 import { StatusBadge, statusLabel } from "@/components/StatusBadge";
 import { canModerate, endpoints, type EventStatus, type MyEvent } from "@/lib/api";
 import { formatWhen } from "@/lib/format";
@@ -72,6 +73,8 @@ export function MyEventsView() {
         </div>
       </div>
       <p style={{ color: "var(--color-muted)" }}>{auth.user?.full_name} · {auth.user?.email}</p>
+      {/* На телефоне сайдбара нет — скин выбирается здесь */}
+      <div className="show-mobile" style={{ maxWidth: 360 }}><SkinPicker tone="page" /></div>
 
       <div role="group" aria-label="Статус" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         {FILTERS.map((f) => {

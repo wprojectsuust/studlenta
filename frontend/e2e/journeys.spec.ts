@@ -134,12 +134,16 @@ test("гость: лента, фильтры, лайк просит войти, 
 
 test("скин сохраняется после перезагрузки и тёмная тема проходит WCAG", async ({ page }) => {
   await page.goto("./");
-  await page.getByRole("button", { name: "Скин: Тёмная" }).click();
+  const skins = page.getByRole("group", { name: "Скин" });
+  await skins.getByRole("radio", { name: "Тёмная" }).check();
   await expect(page.locator("html")).toHaveAttribute("data-skin", "dark");
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-skin", "dark");
-  await expect(page.getByRole("button", { name: "Скин: Тёмная" })).toHaveAttribute("aria-pressed", "true");
+  await expect(skins.getByRole("radio", { name: "Тёмная" })).toBeChecked();
   await expectAccessible(page, "Лента, тёмный скин");
+  await skins.getByRole("radio", { name: "Тёмная" }).focus();
+  await page.keyboard.press("ArrowDown"); // нативные radio: стрелки переключают скин
+  await expect(page.locator("html")).toHaveAttribute("data-skin", "green");
 });
 
 test("календарь управляется с клавиатуры", async ({ page }) => {

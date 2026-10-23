@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
+import { CategoryIcon } from "@/components/CategoryIcon";
 import { EventCard } from "@/components/EventCard";
 import { CardSkeleton, EmptyState, ErrorBanner, LoginToast, Toast } from "@/components/Feedback";
 import { MiniCalendar } from "@/components/MiniCalendar";
@@ -69,7 +70,7 @@ export function FeedView() {
           <Link href="/" aria-current={!category && !favorites ? "page" : undefined} className="chip">Все</Link>
           {categories.data?.map((c) => (
             <Link key={c.id} href={`/?category=${c.slug}`} aria-current={category === c.slug ? "page" : undefined} className="chip">
-              <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 3, background: c.color }} />
+              <CategoryIcon slug={c.slug} color={c.color} size={22} />
               {c.name}
             </Link>
           ))}

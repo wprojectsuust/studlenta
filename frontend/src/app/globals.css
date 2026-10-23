@@ -279,9 +279,15 @@ textarea.input {
   font-weight: 700;
 }
 
+.show-mobile {
+  display: none;
+}
 @media (max-width: 760px) {
   .hide-mobile {
     display: none;
+  }
+  .show-mobile {
+    display: block;
   }
 }
 
