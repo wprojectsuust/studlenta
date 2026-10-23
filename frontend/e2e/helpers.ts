@@ -1,5 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page } from "@playwright/test";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { deflateSync } from "node:zlib";
 
 export const PASSWORD = "password1";
@@ -38,13 +40,29 @@ export async function expectAccessible(page: Page, label: string) {
   expect(summary, `axe на «${label}»`).toEqual([]);
 }
 
-export async function register(page: Page, name: string, email: string) {
+/** Письма в e2e не уходят наружу: API пишет их JSON-файлами в STUDLENTA_MAIL_OUTBOX_DIR. */
+export function lastLetterLink(email: string): string {
+  const dir = process.env.E2E_MAIL_OUTBOX ?? "/tmp/studlenta-mail";
+  const letters = readdirSync(dir).filter((f) => f.endsWith(".json")).sort()
+    .map((f) => JSON.parse(readFileSync(join(dir, f), "utf8")) as { to: string; text: string });
+  const mine = letters.filter((l) => l.to === email);
+  const link = mine.at(-1)?.text.match(/https?:\/\/\S+verify-email\?token=[\w-]+/)?.[0];
+  if (!link) throw new Error(`нет письма для ${email}`);
+  return link;
+}
+
+export async function register(page: Page, name: string, email: string, { verify = true } = {}) {
   await page.goto("login?mode=register");
   await page.getByLabel("Имя и фамилия").fill(name);
   await page.getByLabel("Почта").fill(email);
   await page.getByLabel("Пароль", { exact: true }).fill(PASSWORD);
   await page.getByRole("button", { name: "Зарегистрироваться" }).click();
   await expect(page.getByRole("link", { name: `профиль: ${name}` })).toBeVisible();
+  if (verify) {
+    await expect.poll(() => { try { return lastLetterLink(email); } catch { return ""; } }).toContain("token=");
+    await page.goto(lastLetterLink(email));
+    await expect(page.getByText("Готово, почта подтверждена")).toBeVisible();
+  }
 }
 
 export async function login(page: Page, email: string) {

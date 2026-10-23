@@ -81,7 +81,7 @@ export type Notification = {
   read_at: string | null;
 };
 export type Inbox = { items: Notification[]; unread: number };
-export type Profile = { id: string; email: string; full_name: string; role: Role; unread_notifications: number };
+export type Profile = { id: string; email: string; full_name: string; role: Role; unread_notifications: number; email_verified: boolean };
 export type Token = { access_token: string; token_type: string; expires_in: number };
 
 export const canModerate = (role: Role | undefined) => role === "moderator" || role === "admin";

@@ -1,6 +1,6 @@
 import type { FeedItem, Profile } from "@/lib/api";
 
-export const profile: Profile = { id: "u1", email: "anna@uust.ru", full_name: "Анна Смирнова", role: "author", unread_notifications: 2 };
+export const profile: Profile = { id: "u1", email: "anna@uust.ru", full_name: "Анна Смирнова", role: "author", unread_notifications: 2, email_verified: true };
 
 export function feedItem(overrides: Partial<FeedItem> = {}): FeedItem {
   return {

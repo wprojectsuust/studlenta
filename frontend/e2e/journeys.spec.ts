@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createEvent, expectAccessible, inDays, login, logout, register, uniq } from "./helpers";
+import { createEvent, expectAccessible, inDays, lastLetterLink, login, logout, register, uniq } from "./helpers";
 
 const moderatorEmail = () => process.env.E2E_MODERATOR_EMAIL ?? "mod-e2e@uust.ru";
 
@@ -74,6 +74,26 @@ test("модератор возвращает на доработку — авт
   await page.getByLabel("Окончание").fill(inDays(3, 22));
   await page.getByRole("button", { name: "Отправить на модерацию" }).click();
   await expect(page.getByRole("article", { name: title }).getByText("На проверке")).toBeVisible();
+});
+
+test("подтверждение почты: баннер, запрет отправки, ссылка из письма", async ({ page }) => {
+  const id = uniq();
+  const email = `verify-${id}@uust.ru`;
+  await register(page, "Вера Почтова", email, { verify: false });
+  const banner = page.getByRole("region", { name: "Подтвердите почту" });
+  await expect(banner).toContainText(email);
+  await expectAccessible(page, "Лента с баннером подтверждения");
+
+  await page.goto("my/new");
+  await page.getByLabel("Заголовок", { exact: false }).fill(`Неподтверждённое ${id}`);
+  await page.getByRole("button", { name: "Отправить на модерацию" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "Подтвердите почту" })).toBeVisible();
+
+  await expect.poll(() => { try { return lastLetterLink(email); } catch { return ""; } }).toContain("token=");
+  await page.goto(lastLetterLink(email));
+  await expect(page.getByText("Готово, почта подтверждена")).toBeVisible();
+  await page.goto("./");
+  await expect(banner).toBeHidden();
 });
 
 test("форма показывает ошибки у полей и не теряет данные", async ({ page }) => {

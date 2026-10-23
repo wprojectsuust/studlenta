@@ -9,6 +9,7 @@ import { useRequireAuth } from "@/lib/useRequireAuth";
 import { EventForm } from "./EventForm";
 import { CardSkeleton, EmptyState } from "./Feedback";
 import { PlainHeader } from "./PlainHeader";
+import { VerifyNotice } from "./Shell";
 
 /** Создание (eventId = null) и правка события. Первое автосохранение создаёт черновик. */
 export function EventEditor({ eventId }: { eventId: string | null }) {
@@ -44,6 +45,7 @@ export function EventEditor({ eventId }: { eventId: string | null }) {
   return (
     <>
       <PlainHeader href="/my" label="Мои публикации" />
+      <VerifyNotice />
       <main id="main" style={{ maxWidth: 960, margin: "0 auto", padding: "28px 24px 56px", display: "flex", flexDirection: "column", gap: 20 }}>
         <h1 className="page-title">{title}</h1>
         <p style={{ color: "var(--color-muted)" }}>Событие появится в ленте после проверки модератором.</p>

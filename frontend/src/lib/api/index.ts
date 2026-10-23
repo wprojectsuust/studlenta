@@ -28,6 +28,8 @@ export const endpoints = {
   login: (body: { email: string; password: string }) => api.request<Token>("/auth/login", { method: "POST", body }),
   logout: () => api.request<void>("/auth/logout", { method: "POST" }),
   me: () => api.request<Profile>("/me"),
+  verifyEmail: (token: string) => api.request<void>("/auth/verify-email", { method: "POST", body: { token } }),
+  resendVerification: () => api.request<{ sent: boolean }>("/me/verify-email", { method: "POST" }),
 
   feed: (p: FeedParams) =>
     api.request<Page>("/events", { query: { period: p.period, category: p.category, q: p.q, favorites: p.favorites || undefined, cursor: p.cursor } }),

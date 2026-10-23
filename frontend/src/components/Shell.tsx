@@ -11,6 +11,7 @@ import {
   BellIcon, BookmarkIcon, CalendarIcon, CapIcon, FeedIcon, InfoIcon, PenIcon, PlusIcon, SearchIcon, ShieldIcon, UserIcon,
 } from "./icons";
 import { SkinPicker } from "./SkinPicker";
+import { VerifyEmailBanner } from "./VerifyEmailBanner";
 import styles from "./Shell.module.css";
 
 function initials(name: string) {
@@ -188,6 +189,12 @@ function TabBar() {
   );
 }
 
+export function VerifyNotice() {
+  const { user, status } = useAuth();
+  if (status !== "authenticated" || !user || user.email_verified) return null;
+  return <VerifyEmailBanner email={user.email} onResend={endpoints.resendVerification} />;
+}
+
 export function Shell({ children }: { children: ReactNode }) {
   return (
     <div className={styles.shell}>
@@ -199,6 +206,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <Suspense fallback={<header className={styles.topbar} />}>
           <TopBar />
         </Suspense>
+        <VerifyNotice />
         <main id="main" className={styles.main} tabIndex={-1}>
           {children}
         </main>
