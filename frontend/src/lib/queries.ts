@@ -15,6 +15,10 @@ export function useFeed(params: Omit<FeedParams, "cursor">) {
   });
 }
 
+/** Подборка «Ближайшие» наверху ленты. */
+export const useUpcoming = (enabled: boolean) =>
+  useQuery({ queryKey: ["upcoming"], queryFn: () => endpoints.feed({ period: "all", limit: 10 }), enabled, staleTime: 15_000 });
+
 export const useCategories = () => useQuery({ queryKey: ["categories"], queryFn: endpoints.categories, staleTime: 60_000 });
 export const useCalendar = (month: string) => useQuery({ queryKey: ["calendar", month], queryFn: () => endpoints.calendar(month) });
 export const useDay = (date: string) => useQuery({ queryKey: ["day", date], queryFn: () => endpoints.day(date) });
@@ -50,7 +54,7 @@ function patchEverywhere(client: QueryClient, id: string, fn: (item: FeedItem) =
     }
     return data;
   };
-  for (const key of ["feed", "event", "day", "similar", "guest-favorites"]) {
+  for (const key of ["feed", "event", "day", "similar", "guest-favorites", "upcoming"]) {
     client.setQueriesData({ queryKey: [key] }, visit);
   }
 }

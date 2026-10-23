@@ -142,6 +142,13 @@ test("гость: лента, фильтры, лайк просит войти, 
   await expect(page.getByRole("heading", { level: 1, name: "Лента событий" })).toBeVisible();
   await expectAccessible(page, "Лента");
 
+  const upcoming = page.getByRole("region", { name: "Ближайшие" });
+  await expect(upcoming.getByRole("listitem").first()).toBeVisible();
+  await upcoming.getByRole("button", { name: "Прокрутить вперёд" }).click();
+  await upcoming.getByRole("link").first().click();
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await page.goBack();
+
   await page.getByRole("group", { name: "Когда" }).getByRole("button", { name: "Сегодня" }).click();
   await expect(page).toHaveURL(/period=today/);
   await page.getByRole("group", { name: "Когда" }).getByRole("button", { name: "Все" }).click();

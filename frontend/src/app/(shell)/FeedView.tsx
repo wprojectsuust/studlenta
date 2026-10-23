@@ -5,12 +5,13 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { EventCard } from "@/components/EventCard";
+import { EventStrip } from "@/components/EventStrip";
 import { CardSkeleton, EmptyState, ErrorBanner, LoginToast, Toast } from "@/components/Feedback";
 import { MiniCalendar } from "@/components/MiniCalendar";
 import { PERIODS, PeriodFilter } from "@/components/PeriodFilter";
 import type { FeedItem, Period } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { useCategories, useFeed, useGuestFavorites, useReactions, withGuestFavorites } from "@/lib/queries";
+import { useCategories, useFeed, useGuestFavorites, useReactions, useUpcoming, withGuestFavorites } from "@/lib/queries";
 
 const isPeriod = (v: string | null): v is Period => PERIODS.some((p) => p.id === v);
 
@@ -58,6 +59,8 @@ export function FeedView() {
     router.replace(`${pathname}?${next}`, { scroll: false });
   };
 
+  const home = !favorites && !q && !category && period === "all";
+  const upcoming = useUpcoming(home);
   const categoryName = categories.data?.find((c) => c.slug === category)?.name;
   const title = favorites ? "Избранное" : q ? `Поиск: «${q}»` : (categoryName ?? "Лента событий");
 
@@ -65,6 +68,8 @@ export function FeedView() {
     <div style={{ display: "flex", flexWrap: "wrap", gap: 28, alignItems: "flex-start" }}>
       <section aria-labelledby="feed-title" style={{ flex: "999 1 560px", minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
         <h1 id="feed-title" className="page-title">{title}</h1>
+        {home && <EventStrip title="Ближайшие" items={upcoming.data?.items ?? []} />}
+        {home && (upcoming.data?.items.length ?? 0) > 0 && <h2 style={{ fontSize: 20, fontWeight: 700, marginTop: 8 }}>Все события</h2>}
 
         <nav aria-label="Категории" className="category-strip">
           <Link href="/" aria-current={!category && !favorites ? "page" : undefined} className="chip">Все</Link>

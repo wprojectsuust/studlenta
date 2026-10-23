@@ -20,7 +20,7 @@ export const api = createApiClient({
   onAuthLost: () => authLostListeners.forEach((fn) => fn()),
 });
 
-export type FeedParams = { period?: Period; category?: string | null; q?: string | null; favorites?: boolean; cursor?: string | null };
+export type FeedParams = { period?: Period; category?: string | null; q?: string | null; favorites?: boolean; cursor?: string | null; limit?: number };
 
 export const endpoints = {
   register: (body: { email: string; password: string; full_name: string }) =>
@@ -35,7 +35,7 @@ export const endpoints = {
     api.request<void>("/auth/password-reset/confirm", { method: "POST", body: { token, password } }),
 
   feed: (p: FeedParams) =>
-    api.request<Page>("/events", { query: { period: p.period, category: p.category, q: p.q, favorites: p.favorites || undefined, cursor: p.cursor } }),
+    api.request<Page>("/events", { query: { period: p.period, category: p.category, q: p.q, favorites: p.favorites || undefined, cursor: p.cursor, limit: p.limit } }),
   event: (id: string) => api.request<EventDetails>(`/events/${id}`),
   similar: (id: string) => api.request<FeedItem[]>(`/events/${id}/similar`),
   categories: () => api.request<CategoryCount[]>("/categories"),
