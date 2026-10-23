@@ -54,6 +54,12 @@ PR проходит те же проверки и тесты плюс форма
 Пароль ящика — `SMTP_PASSWORD` в `/opt/studlenta/.env`. Проверить отправку:
 `journalctl -u postfix@- --since "10 min ago" | grep studlenta`.
 
+## Демо-данные
+
+В проде лежат 8 вымышленных событий от демо-организаторов (`org-*@karrad.tech`, роль author,
+подтверждены CLI). Фото — Wikimedia Commons под CC BY / BY-SA, автор и лицензия указаны в
+конце описания каждого события. Убрать демо: снять события с публикации из кабинета админа.
+
 ## Частые операции
 
 Команды выполняются администратором со своим ключом, а не ключом CI.
@@ -68,6 +74,9 @@ ssh karrad 'cd /opt/studlenta && docker compose logs --tail 100 api'
 
 # откат вручную на прошлую версию: перезапустить нужный workflow run в Actions
 # или на сервере: sed -i 's/^RELEASE_TAG=.*/RELEASE_TAG=<sha>/' .env && docker compose up -d
+
+# обложки, загруженные до появления превью (идемпотентно)
+ssh karrad 'cd /opt/studlenta && docker compose exec -T api uv run --no-sync studlenta-rebuild-covers'
 
 # бэкап базы
 ssh karrad 'cd /opt/studlenta && docker compose exec -T db pg_dump -U studlenta studlenta' > backup.sql
