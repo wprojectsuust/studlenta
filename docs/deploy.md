@@ -82,10 +82,11 @@ ssh karrad 'cd /opt/studlenta && docker compose exec -T api uv run --no-sync stu
 ssh karrad 'cd /opt/studlenta && docker compose exec -T db pg_dump -U studlenta studlenta' > backup.sql
 ```
 
-## Напоминания об избранном
+## Расписание (cron)
 
-Раз в час (cron на сервере):
+`/etc/cron.d/studlenta` на сервере (копия — `deploy/cron.studlenta`):
 
-```
-0 * * * * cd /opt/studlenta && docker compose exec -T api uv run --no-sync studlenta-send-reminders
-```
+- каждый час — напоминания о событиях из избранного (`studlenta-send-reminders`);
+- раз в сутки — удаление неиспользуемых обложек (`studlenta-cleanup-media`).
+
+Вывод пишется в `/var/log/studlenta-cron.log`.

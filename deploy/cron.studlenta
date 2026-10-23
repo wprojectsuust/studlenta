@@ -1,0 +1,5 @@
+# /etc/cron.d/studlenta — фоновые задачи Студленты (docs/deploy.md).
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+5 * * * * root cd /opt/studlenta && docker compose exec -T api uv run --no-sync studlenta-send-reminders >> /var/log/studlenta-cron.log 2>&1
+40 4 * * * root cd /opt/studlenta && docker compose exec -T api uv run --no-sync studlenta-cleanup-media >> /var/log/studlenta-cron.log 2>&1

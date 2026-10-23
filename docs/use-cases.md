@@ -58,6 +58,8 @@
 | `RegisterUser` — роль `author`, сразу вход; письмо подтверждения уходит фоном | `POST /auth/register` |
 | `RequestEmailVerification` — письмо со ссылкой, не чаще раза в минуту | `POST /me/verify-email` |
 | `VerifyEmail` — переход по ссылке из письма | `POST /auth/verify-email` |
+| `RequestPasswordReset` — «Забыли пароль?», ответ одинаковый для любой почты | `POST /auth/password-reset` |
+| `ResetPassword` — новый пароль по одноразовой ссылке (час), все сессии отзываются | `POST /auth/password-reset/confirm` |
 | `LoginUser` | `POST /auth/login` |
 | `RefreshSession` — ротация refresh-токена | `POST /auth/refresh` (cookie) |
 | `Logout` | `POST /auth/logout` |
@@ -65,6 +67,9 @@
 | `ListNotifications` | `GET /me/notifications` |
 | `MarkNotificationsRead` | `POST /me/notifications/read` |
 | `SendFavoriteReminders` — фоновый, раз в час | CLI `studlenta-send-reminders` |
+
+Обслуживание (не сценарии пользователя): `studlenta-cleanup-media` — удаляет обложки без
+событий старше суток; `studlenta-rebuild-covers` — догоняет превью у старых обложек.
 
 ## Вне скоупа MVP
 
