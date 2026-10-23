@@ -30,6 +30,9 @@ export const endpoints = {
   me: () => api.request<Profile>("/me"),
   verifyEmail: (token: string) => api.request<void>("/auth/verify-email", { method: "POST", body: { token } }),
   resendVerification: () => api.request<{ sent: boolean }>("/me/verify-email", { method: "POST" }),
+  requestPasswordReset: (email: string) => api.request<{ sent: boolean }>("/auth/password-reset", { method: "POST", body: { email } }),
+  resetPassword: (token: string, password: string) =>
+    api.request<void>("/auth/password-reset/confirm", { method: "POST", body: { token, password } }),
 
   feed: (p: FeedParams) =>
     api.request<Page>("/events", { query: { period: p.period, category: p.category, q: p.q, favorites: p.favorites || undefined, cursor: p.cursor } }),

@@ -96,6 +96,33 @@ test("подтверждение почты: баннер, запрет отпр
   await expect(banner).toBeHidden();
 });
 
+test("восстановление пароля по ссылке из письма", async ({ page }) => {
+  const id = uniq();
+  const email = `forgot-${id}@uust.ru`;
+  await register(page, "Забывчивый Студент", email);
+  await logout(page);
+
+  await page.goto("login");
+  await page.getByRole("link", { name: "Забыли пароль?" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Восстановление пароля" })).toBeVisible();
+  await expectAccessible(page, "Восстановление пароля");
+  await page.getByLabel("Почта").fill(email);
+  await page.getByRole("button", { name: "Прислать ссылку" }).click();
+  await expect(page.getByRole("status")).toContainText("Если такой аккаунт есть");
+
+  await expect.poll(() => { try { return lastLetterLink(email, "reset-password"); } catch { return ""; } }).toContain("token=");
+  await page.goto(lastLetterLink(email, "reset-password"));
+  await page.getByLabel("Новый пароль").fill("brand-new-pass");
+  await page.getByRole("button", { name: "Сохранить пароль" }).click();
+  await expect(page.getByText("Пароль изменён")).toBeVisible();
+
+  await page.goto("login");
+  await page.getByLabel("Почта").fill(email);
+  await page.getByLabel("Пароль", { exact: true }).fill("brand-new-pass");
+  await page.getByRole("button", { name: "Войти" }).click();
+  await expect(page.getByRole("button", { name: /^Уведомления/ })).toBeVisible();
+});
+
 test("форма показывает ошибки у полей и не теряет данные", async ({ page }) => {
   const id = uniq();
   await register(page, "Пётр Ошибкин", `err-${id}@uust.ru`);

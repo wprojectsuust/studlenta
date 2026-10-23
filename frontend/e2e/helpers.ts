@@ -41,12 +41,13 @@ export async function expectAccessible(page: Page, label: string) {
 }
 
 /** Письма в e2e не уходят наружу: API пишет их JSON-файлами в STUDLENTA_MAIL_OUTBOX_DIR. */
-export function lastLetterLink(email: string): string {
+export function lastLetterLink(email: string, kind: "verify-email" | "reset-password" = "verify-email"): string {
   const dir = process.env.E2E_MAIL_OUTBOX ?? "/tmp/studlenta-mail";
   const letters = readdirSync(dir).filter((f) => f.endsWith(".json")).sort()
     .map((f) => JSON.parse(readFileSync(join(dir, f), "utf8")) as { to: string; text: string });
   const mine = letters.filter((l) => l.to === email);
-  const link = mine.at(-1)?.text.match(/https?:\/\/\S+verify-email\?token=[\w-]+/)?.[0];
+  const pattern = new RegExp(`https?://\\S+${kind}\\?token=[\\w-]+`);
+  const link = mine.map((l) => l.text.match(pattern)?.[0]).filter(Boolean).at(-1);
   if (!link) throw new Error(`нет письма для ${email}`);
   return link;
 }

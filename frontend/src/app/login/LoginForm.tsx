@@ -79,6 +79,9 @@ export function LoginForm() {
             <input id="full_name" name="full_name" className="input" autoComplete="name" aria-invalid={Boolean(errors.full_name)} aria-describedby={describedBy("full_name")} />)}
           {field("email", "Почта",
             <input id="email" name="email" type="email" className="input" autoComplete="email" required aria-invalid={Boolean(errors.email)} aria-describedby={describedBy("email")} />)}
+          {mode === "login" && (
+            <Link href="/forgot-password" style={{ alignSelf: "flex-end", fontSize: 14, fontWeight: 500, marginBottom: -12 }}>Забыли пароль?</Link>
+          )}
           {field("password", "Пароль",
             <div style={{ display: "flex" }}>
               <input id="password" name="password" type={show ? "text" : "password"} className="input" style={{ flex: 1, borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
