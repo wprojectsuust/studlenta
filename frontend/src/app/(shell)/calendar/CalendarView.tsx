@@ -122,7 +122,7 @@ export function CalendarView() {
       <ul aria-label="Цвета категорий" style={{ display: "flex", flexWrap: "wrap", gap: "8px 16px", margin: 0, padding: 0, listStyle: "none", fontSize: 13, color: "var(--color-muted)" }}>
         {categories.data?.map((c) => (
           <li key={c.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <CategoryIcon slug={c.slug} color={c.color} size={20} />{c.name}
+            <CategoryIcon slug={c.slug} color={c.color} size={18} />{c.name}
           </li>
         ))}
       </ul>

@@ -1,5 +1,5 @@
-// Значки категорий: линейная иконка на плашке цвета категории (тот же цвет, что у тегов).
-// Белая иконка на любой заливке палитры даёт контраст ≥ 4.5:1.
+// Значки категорий — простые линейные иконки без цветной плашки.
+// По умолчанию цвета текста рядом; цвет категории — только там, где он несёт смысл (легенда календаря).
 
 export const CATEGORY_ICONS: Record<string, string> = {
   concerts: "M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z",
@@ -11,16 +11,13 @@ export const CATEGORY_ICONS: Record<string, string> = {
   other: "M12 3l2.4 5.6L20 9.2l-4.3 3.9 1.3 5.9L12 16l-5 3 1.3-5.9L4 9.2l5.6-.6z",
 };
 
-type Props = { slug: string; color: string; size?: number };
+type Props = { slug: string; color?: string; size?: number };
 
-export function CategoryIcon({ slug, color, size = 26 }: Props) {
-  const path = CATEGORY_ICONS[slug] ?? CATEGORY_ICONS.other;
+export function CategoryIcon({ slug, color = "currentColor", size = 20 }: Props) {
   return (
-    <span style={{ width: size, height: size, flex: "none", display: "inline-grid", placeItems: "center", borderRadius: Math.round(size / 3.5), backgroundColor: color, color: "#FFFFFF" }}>
-      <svg width={size * 0.62} height={size * 0.62} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-        strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
-        <path d={path} />
-      </svg>
-    </span>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.9}
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false" style={{ flex: "none" }}>
+      <path d={CATEGORY_ICONS[slug] ?? CATEGORY_ICONS.other} />
+    </svg>
   );
 }

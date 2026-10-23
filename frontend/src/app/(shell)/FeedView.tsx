@@ -70,7 +70,7 @@ export function FeedView() {
           <Link href="/" aria-current={!category && !favorites ? "page" : undefined} className="chip">Все</Link>
           {categories.data?.map((c) => (
             <Link key={c.id} href={`/?category=${c.slug}`} aria-current={category === c.slug ? "page" : undefined} className="chip">
-              <CategoryIcon slug={c.slug} color={c.color} size={22} />
+              <CategoryIcon slug={c.slug} size={18} />
               {c.name}
             </Link>
           ))}

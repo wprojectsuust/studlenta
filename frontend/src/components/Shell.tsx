@@ -58,7 +58,7 @@ function Sidebar() {
         {categories.data?.map((c) => (
           <Link key={c.id} href={activeCategory === c.slug ? "/" : `/?category=${c.slug}`} className={styles.navItem}
             aria-current={current(activeCategory === c.slug)} style={{ minHeight: 40, fontSize: 14 }}>
-            <CategoryIcon slug={c.slug} color={c.color} />
+            <CategoryIcon slug={c.slug} />
             {c.name}
             <span className={styles.count} aria-label={`${c.upcoming_count} предстоящих`}>{c.upcoming_count}</span>
           </Link>

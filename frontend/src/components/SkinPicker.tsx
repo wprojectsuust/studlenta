@@ -22,7 +22,7 @@ export function SkinPicker({ tone = "side" }: { tone?: "side" | "page" }) {
           <label key={s.id} className={styles.option}>
             <input type="radio" name="skin" value={s.id} checked={current === s.id}
               onChange={() => { saveSkin(s.id); applySkin(s.id); }} />
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d={ICONS[s.id]} />
             </svg>
             {s.name}

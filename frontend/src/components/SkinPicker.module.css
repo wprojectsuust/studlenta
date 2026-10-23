@@ -50,9 +50,13 @@
 .side .legend {
   color: var(--color-side-muted);
 }
+/* В сайдбаре скины выглядят как пункты меню: без рамок, выбранный подсвечен так же, как раздел */
 .side .option {
   color: var(--color-side-muted);
-  border-color: var(--color-side-line);
+  border-color: transparent;
+  font-size: 14px;
+  padding: 0 12px;
+  gap: 12px;
 }
 .side .option:hover,
 .side .option:has(input:checked) {
