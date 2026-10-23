@@ -1,0 +1,32 @@
+# Локальная разработка: `docker compose up -d db` — только база;
+# `docker compose up --build` — база + API на http://localhost:8000/api/v1/docs
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: studlenta
+      POSTGRES_PASSWORD: studlenta
+      POSTGRES_DB: studlenta
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U studlenta"]
+      interval: 2s
+      retries: 20
+
+  api:
+    build: ./backend
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      STUDLENTA_DATABASE_URL: postgresql://studlenta:studlenta@db:5432/studlenta
+      DATABASE_URL: postgresql://studlenta:studlenta@db:5432/studlenta
+      STUDLENTA_JWT_SECRET: ${STUDLENTA_JWT_SECRET:-dev-only-secret-change-me-0123456789abcdef}
+      STUDLENTA_SECURE_COOKIES: "false"
+      STUDLENTA_MEDIA_ROOT: /app/media
+    ports: ["8000:8000"]
+    volumes: [media:/app/media]
+
+volumes:
+  pgdata:
+  media:
