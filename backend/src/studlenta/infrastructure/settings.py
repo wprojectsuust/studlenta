@@ -22,6 +22,17 @@ class Settings(BaseSettings):
     media_root: Path = Path("media")
     media_url: str = "/media"
     # Через запятую: STUDLENTA_CORS_ORIGINS=http://localhost:5173,https://studlenta.example
+    # Публичный адрес фронтенда: из него строится ссылка подтверждения почты.
+    public_url: str = "http://localhost:3000/studlenta"
+    # Почта (ADR-0012). Без smtp_host письма пишутся в лог; mail_outbox_dir — для e2e.
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: SecretStr = SecretStr("")
+    smtp_starttls: bool = True
+    mail_from: str = "studlenta@karrad.tech"
+    mail_from_name: str = "Студлента УУНиТ"
+    mail_outbox_dir: Path | None = None
     cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
     secure_cookies: bool = True
 

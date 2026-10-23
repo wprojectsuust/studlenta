@@ -9,6 +9,7 @@ from asyncpg.pool import PoolConnectionProxy
 from studlenta.infrastructure.db.queries import PgEventQueries
 from studlenta.infrastructure.db.repositories import (
     PgCategoryRepository,
+    PgEmailVerificationRepository,
     PgEventRepository,
     PgModerationLogRepository,
     PgNotificationRepository,
@@ -28,6 +29,7 @@ class PostgresTransaction:
     moderation_log: PgModerationLogRepository
     notifications: PgNotificationRepository
     refresh_tokens: PgRefreshTokenRepository
+    email_verifications: PgEmailVerificationRepository
     queries: PgEventQueries
 
     def __init__(self, pool: asyncpg.Pool) -> None:
@@ -48,6 +50,7 @@ class PostgresTransaction:
         self.moderation_log = PgModerationLogRepository(conn)
         self.notifications = PgNotificationRepository(conn)
         self.refresh_tokens = PgRefreshTokenRepository(conn)
+        self.email_verifications = PgEmailVerificationRepository(conn)
         self.queries = PgEventQueries(conn)
         return self
 

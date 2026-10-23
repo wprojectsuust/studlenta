@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from studlenta.application.dto import RefreshTokenRecord, Session
+from studlenta.application.dto import Actor, RefreshTokenRecord, Session
 from studlenta.application.ports import TokenService, UnitOfWork
 from studlenta.domain.users import User
 
@@ -13,4 +13,6 @@ async def open_session(uow: UnitOfWork, tokens: TokenService, user: User, now: d
     await uow.refresh_tokens.add(
         RefreshTokenRecord(tokens.hash_refresh_token(refresh), user.id, expires, None)
     )
-    return Session(tokens.issue_access_token(user, now), refresh, expires)
+    return Session(
+        tokens.issue_access_token(user, now), refresh, expires, Actor(user.id, user.role)
+    )

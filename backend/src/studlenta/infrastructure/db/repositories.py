@@ -10,6 +10,7 @@ from asyncpg.pool import PoolConnectionProxy
 from studlenta.application.dto import (
     CategoryRef,
     CategoryWithCount,
+    EmailVerificationRecord,
     ModerationAction,
     ModerationLogEntry,
     Notification,
@@ -100,8 +101,9 @@ class PgEventRepository:
 
 def _user(r: asyncpg.Record) -> User:
     return User(
-        r["id"], r["email"], r["full_name"], Role(r["role"]), r["password_hash"], r["created_at"]
-    )
+        r["id"], r["email"], r["full_name"], Role(r["role"]), r["password_hash"], r["created_at"],
+        r["email_verified_at"],
+    )  # fmt: skip
 
 
 class PgUserRepository:
@@ -120,13 +122,47 @@ class PgUserRepository:
         try:
             async with self._conn.transaction():  # savepoint: ошибка не ломает всю транзакцию
                 await self._conn.execute(
-                    "INSERT INTO users (id, email, full_name, role, password_hash, created_at) "
-                    "VALUES ($1, $2, $3, $4, $5, $6)",
+                    "INSERT INTO users (id, email, full_name, role, password_hash, created_at, "
+                    "email_verified_at) VALUES ($1, $2, $3, $4, $5, $6, $7)",
                     user.id, user.email, user.full_name, user.role.value, user.password_hash,
-                    user.created_at,
+                    user.created_at, user.email_verified_at,
                 )  # fmt: skip
         except asyncpg.UniqueViolationError as exc:
             raise ConflictError("Почта уже зарегистрирована") from exc
+
+    async def mark_email_verified(self, user_id: UUID, now: datetime) -> None:
+        await self._conn.execute(
+            "UPDATE users SET email_verified_at = $2 WHERE id = $1 AND email_verified_at IS NULL",
+            user_id, now,
+        )  # fmt: skip
+
+
+class PgEmailVerificationRepository:
+    def __init__(self, conn: Conn) -> None:
+        self._conn = conn
+
+    async def add(self, record: EmailVerificationRecord) -> None:
+        await self._conn.execute(
+            "INSERT INTO email_verifications (token_hash, user_id, created_at, expires_at) "
+            "VALUES ($1, $2, $3, $4)",
+            record.token_hash, record.user_id, record.created_at, record.expires_at,
+        )  # fmt: skip
+
+    async def get(self, token_hash: str) -> EmailVerificationRecord | None:
+        row = await self._conn.fetchrow(
+            "SELECT * FROM email_verifications WHERE token_hash = $1", token_hash
+        )
+        if row is None:
+            return None
+        return EmailVerificationRecord(
+            row["token_hash"], row["user_id"], row["created_at"], row["expires_at"]
+        )
+
+    async def latest_created_at(self, user_id: UUID) -> datetime | None:
+        value: datetime | None = await self._conn.fetchval(
+            "SELECT max(created_at) FROM email_verifications WHERE user_id = $1", user_id
+        )
+        return value
 
 
 def category_ref(r: asyncpg.Record, prefix: str = "") -> CategoryRef:

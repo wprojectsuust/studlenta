@@ -6,6 +6,7 @@ import asyncpg
 import pytest
 
 from studlenta.application.dto import (
+    EmailVerificationRecord,
     ModerationAction,
     ModerationLogEntry,
     Notification,
@@ -242,3 +243,30 @@ class TestRefreshTokens:
             assert stored
             assert stored.revoked_at == NOW
             assert await tx.refresh_tokens.get("missing") is None
+
+
+class TestEmailVerifications:
+    async def test_tokens_and_marking_user_verified(
+        self, pool: asyncpg.Pool, uow: PostgresUnitOfWork
+    ) -> None:
+        user = await make_user(pool)
+        assert user.email_verified_at is None
+        first = EmailVerificationRecord("h1", user.id, NOW, NOW + timedelta(days=1))
+        second = EmailVerificationRecord(
+            "h2", user.id, NOW + timedelta(minutes=5), NOW + timedelta(days=1)
+        )
+        async with uow() as tx:
+            assert await tx.email_verifications.latest_created_at(user.id) is None
+            await tx.email_verifications.add(first)
+            await tx.email_verifications.add(second)
+            assert await tx.email_verifications.get("h1") == first
+            assert await tx.email_verifications.get("nope") is None
+            latest = await tx.email_verifications.latest_created_at(user.id)
+            assert latest == NOW + timedelta(minutes=5)
+            await tx.users.mark_email_verified(user.id, NOW)
+            await tx.commit()
+        async with uow() as tx:
+            stored = await tx.users.get(user.id)
+        assert stored is not None
+        assert stored.email_verified_at == NOW
+        assert stored.is_verified

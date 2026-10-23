@@ -1,8 +1,11 @@
+from datetime import UTC, datetime
+from uuid import uuid4
+
 import pytest
 
 from studlenta.domain.categories import CATEGORY_PALETTE, Category
 from studlenta.domain.errors import ValidationError
-from studlenta.domain.users import Role, normalize_email, validate_password
+from studlenta.domain.users import Role, User, normalize_email, validate_password
 
 
 class TestEmail:
@@ -51,3 +54,12 @@ class TestCategory:
     def test_slug_is_url_safe(self, slug: str) -> None:
         with pytest.raises(ValidationError):
             Category.create(category_id=1, slug=slug, name="Спорт", color="#15803D")
+
+
+class TestVerification:
+    def test_user_is_verified_once_email_confirmed(self) -> None:
+        now = datetime(2026, 10, 23, tzinfo=UTC)
+        user = User(uuid4(), "a@uust.ru", "Анна", Role.AUTHOR, "h", now)
+        assert not user.is_verified
+        assert user.verified(now).is_verified
+        assert user.verified(now).email_verified_at == now

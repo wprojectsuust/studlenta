@@ -15,4 +15,4 @@ class GetCurrentUser:
             if user is None:
                 raise AuthenticationError("Пользователь не найден")
             unread = await uow.notifications.count_unread(user.id)
-        return Profile(user.id, user.email, user.full_name, user.role, unread)
+        return Profile(user.id, user.email, user.full_name, user.role, unread, user.is_verified)

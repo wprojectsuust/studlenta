@@ -38,10 +38,20 @@ def content(**overrides: object) -> EventContent:
     return EventContent(**data)  # type: ignore[arg-type]
 
 
-async def add_user(uow: FakeUnitOfWork, n: int, role: Role = Role.AUTHOR) -> Actor:
+async def add_user(
+    uow: FakeUnitOfWork, n: int, role: Role = Role.AUTHOR, *, verified: bool = True
+) -> Actor:
     user_id = UUID(int=10_000 + n)
     await uow.users.add(
-        User(user_id, f"user{n}@uust.ru", f"Пользователь {n}", role, "hashed:password1", NOW)
+        User(
+            user_id,
+            f"user{n}@uust.ru",
+            f"Пользователь {n}",
+            role,
+            "hashed:password1",
+            NOW,
+            email_verified_at=NOW if verified else None,
+        )
     )
     return Actor(user_id, role)
 

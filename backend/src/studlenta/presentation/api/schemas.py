@@ -45,6 +45,14 @@ class EventIn(_In):
         return EventContent(**self.model_dump())
 
 
+class TokenIn(_In):
+    token: str
+
+
+class SentOut(BaseModel):
+    sent: bool
+
+
 class NoteIn(_In):
     note: str
 
@@ -213,6 +221,7 @@ class ProfileOut(BaseModel):
     full_name: str
     role: Role
     unread_notifications: int
+    email_verified: bool
 
 
 class ErrorBody(BaseModel):

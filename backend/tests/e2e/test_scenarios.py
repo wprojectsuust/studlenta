@@ -1,6 +1,7 @@
 """Сквозные сценарии с холста дизайна — через HTTP, на настоящей базе."""
 
 import io
+import json
 from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -8,11 +9,12 @@ from zoneinfo import ZoneInfo
 import asyncpg
 import httpx
 import pytest
+from fastapi import FastAPI
 from PIL import Image
 
 from studlenta.infrastructure.settings import Settings
 from studlenta.presentation.api.app import create_app
-from tests.e2e.conftest import Api, moderator, register
+from tests.e2e.conftest import Api, last_link, moderator, outbox, register
 
 pytestmark = pytest.mark.e2e
 UFA = ZoneInfo("Asia/Yekaterinburg")
@@ -349,7 +351,7 @@ class TestBehindPathPrefix:
         app = create_app(settings, pool=pool)
         transport = httpx.ASGITransport(app=app, root_path="/studlenta")
         async with httpx.AsyncClient(transport=transport, base_url="https://test") as client:
-            author = await register(client, "prefix@uust.ru")
+            author = await register(client, "prefix@uust.ru", verify=False)
             set_cookie = (
                 await client.post(
                     "/api/v1/auth/login", json={"email": "prefix@uust.ru", "password": "password1"}
@@ -367,3 +369,35 @@ class TestBehindPathPrefix:
 
             docs = await client.get("/api/v1/docs")
             assert "/studlenta/api/v1/openapi.json" in docs.text
+
+
+class TestEmailVerification:
+    async def test_register_mail_link_and_resend(
+        self, client: httpx.AsyncClient, app: FastAPI
+    ) -> None:
+        author = await register(client, "new@uust.ru", "Новый Автор", verify=False)
+        me = (await author.get("/me")).json()
+        assert me["email_verified"] is False
+
+        event_id = (await author.post("/me/events", json=event_body())).json()["id"]
+        blocked = await author.post(f"/me/events/{event_id}/submit")
+        assert blocked.status_code == 403
+        assert "Подтвердите почту" in blocked.json()["error"]["message"]
+
+        too_soon = await author.post("/me/verify-email")
+        assert too_soon.status_code == 409
+
+        assert (
+            await client.post("/api/v1/auth/verify-email", json={"token": "forged"})
+        ).status_code == 422
+        token = last_link(app, "new@uust.ru")
+        assert (
+            await client.post("/api/v1/auth/verify-email", json={"token": token})
+        ).status_code == 204
+        assert (await author.get("/me")).json()["email_verified"] is True
+        assert (await author.post(f"/me/events/{event_id}/submit")).status_code == 204
+        assert (await author.post("/me/verify-email")).json() == {"sent": False}
+
+        letter = json.loads(sorted(outbox(app).glob("*.json"))[0].read_text(encoding="utf-8"))
+        assert letter["subject"] == "Подтвердите почту — Студлента УУНиТ"
+        assert "https://karrad.tech/studlenta/verify-email?token=" in letter["text"]

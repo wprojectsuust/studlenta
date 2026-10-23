@@ -15,6 +15,8 @@ from studlenta.application.dto import (
     AuthoredEvent,
     CalendarDay,
     CategoryWithCount,
+    EmailMessage,
+    EmailVerificationRecord,
     EventDetails,
     FeedItem,
     ImageInfo,
@@ -47,6 +49,12 @@ class TokenService(Protocol):
     def issue_access_token(self, user: User, now: datetime) -> str: ...
     def new_refresh_token(self) -> str: ...
     def hash_refresh_token(self, token: str) -> str: ...
+
+
+class EmailSender(Protocol):
+    async def send(self, message: EmailMessage) -> None:
+        """Отправляет письмо; при недоступности почты бросает исключение."""
+        ...
 
 
 class FileStorage(Protocol):
@@ -82,6 +90,16 @@ class UserRepository(Protocol):
     async def add(self, user: User) -> None:
         """При занятой почте — ``ConflictError``."""
         ...
+
+    async def mark_email_verified(self, user_id: UUID, now: datetime) -> None: ...
+
+
+class EmailVerificationRepository(Protocol):
+    """Токены подтверждения почты; хранится только хеш токена."""
+
+    async def add(self, record: EmailVerificationRecord) -> None: ...
+    async def get(self, token_hash: str) -> EmailVerificationRecord | None: ...
+    async def latest_created_at(self, user_id: UUID) -> datetime | None: ...
 
 
 class CategoryRepository(Protocol):
@@ -176,6 +194,8 @@ class UnitOfWork(Protocol):
     def notifications(self) -> NotificationRepository: ...
     @property
     def refresh_tokens(self) -> RefreshTokenRepository: ...
+    @property
+    def email_verifications(self) -> EmailVerificationRepository: ...
     @property
     def queries(self) -> EventQueries: ...
 

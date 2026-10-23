@@ -19,8 +19,10 @@ async def create_user_in_db(
     pool: asyncpg.Pool, email: str, full_name: str, role: Role, password: str
 ) -> User:
     validate_password(password)
+    now = SystemClock().now()
+    # Аккаунты из CLI создаёт администратор — почту считаем подтверждённой.
     user = User(UuidGenerator().new_id(), normalize_email(email), normalize_name(full_name), role,
-                Argon2PasswordHasher().hash(password), SystemClock().now())  # fmt: skip
+                Argon2PasswordHasher().hash(password), now, email_verified_at=now)  # fmt: skip
     async with PostgresUnitOfWork(pool)() as uow:
         await uow.users.add(user)
         await uow.commit()

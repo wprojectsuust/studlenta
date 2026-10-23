@@ -40,6 +40,7 @@ class TestRegister:
         assert user.full_name == "Анна Смирнова"
         assert user.role is Role.AUTHOR
         assert user.password_hash == "hashed:password1"
+        assert not user.is_verified  # подтверждение — отдельным письмом
         assert session.access_token == f"access:{user.id}:author"
         assert session.refresh_expires_at == clock.now() + REFRESH_TTL
         assert "h(refresh-1)" in uow.refresh_tokens.rows
@@ -115,6 +116,7 @@ class TestCurrentUser:
         [user] = uow.users.rows.values()
         profile = await GetCurrentUser(uow)(Actor(user.id, user.role))
         assert (profile.email, profile.unread_notifications) == ("anna@uust.ru", 0)
+        assert profile.email_verified is False
 
     async def test_deleted_user(self, uow: FakeUnitOfWork) -> None:
         with pytest.raises(AuthenticationError):

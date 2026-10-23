@@ -16,6 +16,8 @@ from studlenta.application.dto import (
     CalendarDay,
     CategoryRef,
     CategoryWithCount,
+    EmailMessage,
+    EmailVerificationRecord,
     EventDetails,
     FeedItem,
     ImageInfo,
@@ -132,6 +134,34 @@ class InMemoryUsers:
         if await self.get_by_email(user.email):
             raise ConflictError("Почта уже зарегистрирована")
         self.rows[user.id] = user
+
+    async def mark_email_verified(self, user_id: UUID, now: datetime) -> None:
+        self.rows[user_id] = replace(self.rows[user_id], email_verified_at=now)
+
+
+class InMemoryEmailVerifications:
+    def __init__(self) -> None:
+        self.rows: dict[str, EmailVerificationRecord] = {}
+
+    async def add(self, record: EmailVerificationRecord) -> None:
+        self.rows[record.token_hash] = record
+
+    async def get(self, token_hash: str) -> EmailVerificationRecord | None:
+        return self.rows.get(token_hash)
+
+    async def latest_created_at(self, user_id: UUID) -> datetime | None:
+        return max((r.created_at for r in self.rows.values() if r.user_id == user_id), default=None)
+
+
+class FakeMailer:
+    def __init__(self) -> None:
+        self.sent: list[EmailMessage] = []
+        self.fail = False
+
+    async def send(self, message: EmailMessage) -> None:
+        if self.fail:
+            raise OSError("SMTP недоступен")
+        self.sent.append(message)
 
 
 class InMemoryCategories:
@@ -314,6 +344,7 @@ class FakeUnitOfWork:
         self.moderation_log = InMemoryModerationLog()
         self.notifications = InMemoryNotifications()
         self.refresh_tokens = InMemoryRefreshTokens()
+        self.email_verifications = InMemoryEmailVerifications()
         self.queries = StubQueries()
         self.commits = 0
         self._snapshot: dict[str, Any] = {}
@@ -327,6 +358,7 @@ class FakeUnitOfWork:
             "log": list(self.moderation_log.entries),
             "notifications": list(self.notifications.rows),
             "tokens": dict(self.refresh_tokens.rows),
+            "verifications": dict(self.email_verifications.rows),
         }
 
     def _restore(self, s: dict[str, Any]) -> None:
@@ -337,6 +369,7 @@ class FakeUnitOfWork:
         self.moderation_log.entries = s["log"]
         self.notifications.rows = s["notifications"]
         self.refresh_tokens.rows = s["tokens"]
+        self.email_verifications.rows = s["verifications"]
 
     def __call__(self) -> Self:
         return self

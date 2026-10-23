@@ -1,5 +1,5 @@
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
@@ -29,6 +29,15 @@ class User:
     role: Role
     password_hash: str
     created_at: datetime
+    # Пока почта не подтверждена, нельзя отправлять события на модерацию (ADR-0012).
+    email_verified_at: datetime | None = None
+
+    @property
+    def is_verified(self) -> bool:
+        return self.email_verified_at is not None
+
+    def verified(self, now: datetime) -> "User":
+        return self if self.is_verified else replace(self, email_verified_at=now)
 
 
 def normalize_email(raw: str) -> str:

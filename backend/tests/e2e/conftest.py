@@ -1,3 +1,5 @@
+import json
+import re
 from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
@@ -29,6 +31,8 @@ def app(pool: asyncpg.Pool, database_url: str, tmp_path: Path) -> FastAPI:
         jwt_secret="e2e-secret-" + "x" * 32,
         media_root=tmp_path / "media",
         secure_cookies=False,
+        mail_outbox_dir=tmp_path / "mail",
+        public_url="https://karrad.tech/studlenta",
     )
     return create_app(settings, pool=pool)
 
@@ -62,11 +66,34 @@ class Api:
         return await self.client.delete(API + path, headers=self._headers(), **kw)
 
 
-async def register(client: httpx.AsyncClient, email: str, name: str = "Анна") -> Api:
+def outbox(app: FastAPI) -> Path:
+    folder: Path = app.state.container.settings.mail_outbox_dir
+    return folder
+
+
+def last_link(app: FastAPI, email: str) -> str:
+    letters = [
+        json.loads(p.read_text(encoding="utf-8")) for p in sorted(outbox(app).glob("*.json"))
+    ]
+    mine = [m for m in letters if m["to"] == email]
+    assert mine, f"письмо для {email} не отправлено"
+    match = re.search(r"token=([\w-]+)", mine[-1]["text"])
+    assert match
+    return match.group(1)
+
+
+async def register(
+    client: httpx.AsyncClient, email: str, name: str = "Анна", *, verify: bool = True
+) -> Api:
     r = await client.post(
         f"{API}/auth/register", json={"email": email, "password": "password1", "full_name": name}
     )
     assert r.status_code == 201, r.text
+    if verify:
+        app: FastAPI = client._transport.app  # type: ignore[attr-defined]
+        token = last_link(app, email)
+        confirmed = await client.post(f"{API}/auth/verify-email", json={"token": token})
+        assert confirmed.status_code == 204, confirmed.text
     return Api(client, r.json()["access_token"])
 
 

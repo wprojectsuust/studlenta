@@ -152,6 +152,7 @@ class Session:
     access_token: str
     refresh_token: str
     refresh_expires_at: datetime
+    actor: Actor
 
 
 @dataclass(frozen=True, slots=True)
@@ -168,9 +169,26 @@ class Profile:
     full_name: str
     role: Role
     unread_notifications: int
+    email_verified: bool = False
 
 
 @dataclass(frozen=True, slots=True)
 class Inbox:
     items: list[Notification]
     unread: int
+
+
+@dataclass(frozen=True, slots=True)
+class EmailMessage:
+    to: str
+    subject: str
+    text: str
+    html: str
+
+
+@dataclass(frozen=True, slots=True)
+class EmailVerificationRecord:
+    token_hash: str
+    user_id: UUID
+    created_at: datetime
+    expires_at: datetime
