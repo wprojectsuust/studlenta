@@ -1,0 +1,46 @@
+# Прод на karrad.tech: /opt/studlenta/docker-compose.yml. Образ собирает CI (ADR-0010).
+# Лимиты памяти обязательны: на этом же VPS (1 ГБ) работает «База знаний УУНиТ».
+name: studlenta
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: studlenta
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD не задан в .env}
+      POSTGRES_DB: studlenta
+    command: ["postgres", "-c", "shared_buffers=32MB", "-c", "max_connections=30",
+              "-c", "work_mem=2MB", "-c", "maintenance_work_mem=16MB"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U studlenta"]
+      interval: 5s
+      retries: 20
+    mem_limit: 192m
+    networks: [internal]
+
+  api:
+    image: ghcr.io/wprojectsuust/studlenta-api:${API_TAG:?API_TAG не задан}
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      STUDLENTA_DATABASE_URL: postgresql://studlenta:${DB_PASSWORD}@db:5432/studlenta
+      DATABASE_URL: postgresql://studlenta:${DB_PASSWORD}@db:5432/studlenta
+      STUDLENTA_JWT_SECRET: ${JWT_SECRET:?JWT_SECRET не задан в .env}
+      STUDLENTA_ROOT_PATH: /studlenta
+      STUDLENTA_SECURE_COOKIES: "true"
+      STUDLENTA_CORS_ORIGINS: https://karrad.tech
+      STUDLENTA_MEDIA_ROOT: /app/media
+    ports: ["127.0.0.1:5010:8000"]   # наружу — только через nginx
+    volumes: [media:/app/media]
+    mem_limit: 256m
+    networks: [internal]
+
+volumes:
+  pgdata:
+  media:
+
+networks:
+  internal:
