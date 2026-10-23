@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from studlenta.infrastructure.settings import Settings
 from studlenta.presentation.api.container import Container, Deps
 from studlenta.presentation.api.errors import install_error_handlers
-from studlenta.presentation.api.routes import auth, author, moderation, public
+from studlenta.presentation.api.routes import auth, author, interests, moderation, public
 
 PREFIX = "/api/v1"
 # Публичное чтение, одинаковое для всех гостей (ленты, событие, календарь, категории).
@@ -85,7 +85,8 @@ def create_app(settings: Settings | None = None, pool: asyncpg.Pool | None = Non
         await c.pool.fetchval("SELECT 1")
         return {"status": "ok", "database": "ok"}
 
-    for router in (system, auth.router, public.router, author.router, moderation.router):
+    routers = (system, auth.router, public.router, interests.router, author.router)
+    for router in (*routers, moderation.router):
         app.include_router(router, prefix=PREFIX)
 
     settings.media_root.mkdir(parents=True, exist_ok=True)

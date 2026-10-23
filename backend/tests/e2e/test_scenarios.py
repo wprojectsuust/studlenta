@@ -475,3 +475,50 @@ class TestPasswordReset:
 
         client.cookies.set("refresh_token", old_cookie)
         assert (await client.post("/api/v1/auth/refresh")).status_code == 401
+
+
+class TestInterests:
+    """Просмотры → «Для вас» с объяснением → аналитика модератора и автора."""
+
+    async def test_views_drive_recommendations_and_analytics(
+        self, client: httpx.AsyncClient, pool: asyncpg.Pool
+    ) -> None:
+        author = await register(client, "org@uust.ru", "Оргкомитет")
+        mod = await moderator(client, pool)
+        jazz = await publish(author, mod, title="Джазовый вечер", starts_at=future(2).isoformat())
+        choir = await publish(author, mod, title="Концерт хора", starts_at=future(4).isoformat())
+        run = await publish(
+            author, mod, title="Осенний забег", category_id=2, starts_at=future(1).isoformat()
+        )
+        guest = Api(client)
+        me, other = "6f1c2a52-3c1d-4f0e-9a49-1b7f3c1f0a11", "0d9a8c51-6b55-4c0e-8f0e-7a1b2c3d4e5f"
+
+        # Холодный старт: просмотров нет — ближайшие с пометкой «Скоро»
+        cold = (await guest.get("/recommendations", params={"visitor": me})).json()
+        assert [r["id"] for r in cold] == [run, jazz, choir]
+        assert {(r["reason"], r["reason_kind"]) for r in cold} == {("Скоро", "soon")}
+
+        for event_id, visitor in ((jazz, me), (jazz, other), (choir, other)):
+            r = await guest.post(f"/events/{event_id}/view", json={"visitor_id": visitor})
+            assert r.status_code == 204
+        assert (await guest.post(f"/events/{jazz}/view", json={})).status_code == 422
+
+        recs = await guest.get("/recommendations", params={"visitor": me})
+        assert recs.headers["cache-control"] == "private, no-store"
+        top = recs.json()[0]
+        assert top["id"] == choir  # тот же жанр, и его смотрел другой зритель джаза
+        assert top["reason"] == "Вы часто смотрите «Концерты»"
+        assert jazz not in {r["id"] for r in recs.json()}  # уже видел
+
+        report = (await mod.get("/analytics/interests", params={"days": 7})).json()
+        assert report["scope"] == "all"
+        assert report["totals"]["views"] == 3
+        assert report["totals"]["viewers"] == 2
+        assert report["top"][0]["title"] == "Джазовый вечер"
+        assert report["categories"][0]["category"]["slug"] == "concerts"
+
+        stranger = await register(client, "stranger@uust.ru", "Чужой автор")
+        own = (await stranger.get("/analytics/interests")).json()
+        assert own["scope"] == "mine"
+        assert own["totals"]["views"] == 0
+        assert (await guest.get("/analytics/interests")).status_code == 401

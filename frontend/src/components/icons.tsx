@@ -33,4 +33,5 @@ export const LinkIcon = make("M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M
 export const UploadIcon = make("M12 16V4M7 9l5-5 5 5M4 16v4h16v-4");
 export const CheckIcon = make("M5 12l5 5L20 7");
 export const CapIcon = make("M2 9l10-5 10 5-10 5zM6 11v5c2 2 10 2 12 0v-5M22 9v6");
+export const ChartIcon = make("M4 20V10M10 20V4M16 20v-7M22 20H2");
 export const TicketIcon = make("M3 9a2 2 0 0 0 0 6v4h18v-4a2 2 0 0 0 0-6V5H3zM14 5v14");

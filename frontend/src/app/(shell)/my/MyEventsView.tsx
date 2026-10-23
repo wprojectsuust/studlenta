@@ -76,6 +76,7 @@ export function MyEventsView() {
         <h1 className="page-title">Мои публикации</h1>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           {canModerate(auth.user?.role) && <Link href="/moderation" className="btn btn-secondary">Модерация</Link>}
+          <Link href="/analytics" className="btn btn-secondary">Аналитика</Link>
           <Link href="/my/new" className="btn btn-primary"><PlusIcon size={18} />Новое событие</Link>
           <button type="button" className="btn btn-ghost" onClick={() => void logout()}>Выйти</button>
         </div>

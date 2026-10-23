@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 import { endpoints, type EventStatus, type FeedItem, type FeedParams } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { readGuestFavorites, toggleGuestFavorite } from "@/lib/guestFavorites";
+import { visitorId } from "@/lib/visitor";
 
 export function useFeed(params: Omit<FeedParams, "cursor">) {
   return useInfiniteQuery({
@@ -18,6 +19,19 @@ export function useFeed(params: Omit<FeedParams, "cursor">) {
 /** Подборка «Ближайшие» наверху ленты. */
 export const useUpcoming = (enabled: boolean) =>
   useQuery({ queryKey: ["upcoming"], queryFn: () => endpoints.feed({ period: "all", limit: 10 }), enabled, staleTime: 15_000 });
+
+/** «Для вас»: персональная подборка; гость узнаётся по анонимному id браузера. */
+export function useRecommendations(enabled: boolean) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["recommendations", user?.id ?? "guest"],
+    queryFn: () => endpoints.recommendations(visitorId()),
+    enabled,
+  });
+}
+
+export const useInterestAnalytics = (days: number, enabled = true) =>
+  useQuery({ queryKey: ["analytics", days], queryFn: () => endpoints.analytics(days), enabled });
 
 export const useCategories = () => useQuery({ queryKey: ["categories"], queryFn: endpoints.categories, staleTime: 60_000 });
 export const useCalendar = (month: string) => useQuery({ queryKey: ["calendar", month], queryFn: () => endpoints.calendar(month) });
@@ -54,7 +68,7 @@ function patchEverywhere(client: QueryClient, id: string, fn: (item: FeedItem) =
     }
     return data;
   };
-  for (const key of ["feed", "event", "day", "similar", "guest-favorites", "upcoming"]) {
+  for (const key of ["feed", "event", "day", "similar", "guest-favorites", "upcoming", "recommendations"]) {
     client.setQueriesData({ queryKey: [key] }, visit);
   }
 }

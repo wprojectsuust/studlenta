@@ -6,7 +6,7 @@
 
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
-from datetime import datetime, tzinfo
+from datetime import date, datetime, tzinfo
 from types import TracebackType
 from typing import Protocol, Self
 from uuid import UUID
@@ -14,12 +14,15 @@ from uuid import UUID
 from studlenta.application.dto import (
     AuthoredEvent,
     CalendarDay,
+    CandidateItem,
     CategoryWithCount,
     EmailMessage,
     EmailVerificationRecord,
     EventDetails,
     FeedItem,
+    HistoryItem,
     ImageInfo,
+    InterestReport,
     ModerationLogEntry,
     MyEventItem,
     Notification,
@@ -28,6 +31,7 @@ from studlenta.application.dto import (
 )
 from studlenta.domain.categories import Category
 from studlenta.domain.events import Event, EventStatus
+from studlenta.domain.recommendations import CoView
 from studlenta.domain.users import User
 
 # --- Окружение ---------------------------------------------------------------
@@ -201,6 +205,41 @@ class EventQueries(Protocol):
     async def calendar_month(self, year: int, month: int, tz: tzinfo) -> list[CalendarDay]: ...
 
 
+class InterestQueries(Protocol):
+    """Сигналы интереса: просмотры, лайки, избранное (ADR-0014).
+
+    Зритель — строка ``u:<user id>`` для вошедших и ``g:<visitor id>`` для гостей.
+    """
+
+    async def record_view(
+        self, event_id: UUID, viewer: str, user_id: UUID | None, day: date, now: datetime
+    ) -> bool:
+        """Один просмотр на зрителя в день. ``False`` — событие не опубликовано."""
+        ...
+
+    async def history(
+        self, viewers: Sequence[str], user_id: UUID | None, since: datetime
+    ) -> list[HistoryItem]: ...
+
+    async def candidates(
+        self, starts_from: datetime, viewer_id: UUID | None, since: datetime, limit: int
+    ) -> list[CandidateItem]:
+        """Предстоящие опубликованные события по дате с популярностью за период."""
+        ...
+
+    async def co_views(
+        self, seeds: Sequence[UUID], viewers: Sequence[str], since: datetime
+    ) -> list[CoView]:
+        """Что ещё смотрели другие зрители событий ``seeds`` (сами ``viewers`` не в счёт)."""
+        ...
+
+    async def report(
+        self, since: datetime, until: datetime, tz: tzinfo, author_id: UUID | None
+    ) -> InterestReport:
+        """Сводка за период; ``author_id`` — только события этого автора."""
+        ...
+
+
 # --- Транзакция --------------------------------------------------------------
 
 
@@ -226,6 +265,8 @@ class UnitOfWork(Protocol):
     def password_resets(self) -> PasswordResetRepository: ...
     @property
     def queries(self) -> EventQueries: ...
+    @property
+    def interests(self) -> InterestQueries: ...
 
     async def __aenter__(self) -> Self: ...
     async def __aexit__(

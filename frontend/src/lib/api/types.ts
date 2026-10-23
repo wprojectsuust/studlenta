@@ -20,6 +20,18 @@ export type FeedItem = {
   liked: boolean;
   favorited: boolean;
 };
+export type ReasonKind = "category" | "similar" | "also_viewed" | "popular" | "soon";
+export type Recommended = FeedItem & { reason: string; reason_kind: ReasonKind };
+
+export type InterestReport = {
+  scope: "all" | "mine";
+  days: number;
+  totals: { views: number; viewers: number; likes: number; favorites: number };
+  daily: { day: string; views: number; viewers: number }[];
+  categories: { category: Category; events: number; views: number; likes: number; favorites: number }[];
+  top: { id: string; title: string; category: Category; starts_at: string; views: number; viewers: number; likes: number; favorites: number }[];
+};
+
 export type Page = { items: FeedItem[]; next_cursor: string | null };
 export type EventDetails = FeedItem & { body: string; organizer_name: string; published_at: string };
 

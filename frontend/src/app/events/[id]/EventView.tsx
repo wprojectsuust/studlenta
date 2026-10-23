@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 const noSubscribe = () => () => undefined;
 import { Cover } from "@/components/Cover";
@@ -13,6 +13,7 @@ import { API_BASE } from "@/lib/config";
 import { ApiError, endpoints, type EventDetails } from "@/lib/api";
 import { formatTime, formatWhen, formatWhenInline } from "@/lib/format";
 import { useReactions, useSimilar, withGuestFavorites } from "@/lib/queries";
+import { visitorId } from "@/lib/visitor";
 import styles from "./event.module.css";
 
 export function EventView({ initial }: { initial: EventDetails }) {
@@ -21,6 +22,10 @@ export function EventView({ initial }: { initial: EventDetails }) {
   const reactions = useReactions();
   const similar = useSimilar(initial.id);
   const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    // Сигнал интереса для «Для вас» и аналитики; ошибка не мешает читать событие.
+    endpoints.recordView(initial.id, visitorId()).catch(() => undefined);
+  }, [initial.id]);
   const url = useSyncExternalStore(noSubscribe, () => window.location.href, () => "");
 
   if (query.error instanceof ApiError && query.error.status === 404) {

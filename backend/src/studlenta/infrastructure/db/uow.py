@@ -6,6 +6,7 @@ from typing import Self
 import asyncpg
 from asyncpg.pool import PoolConnectionProxy
 
+from studlenta.infrastructure.db.interests import PgInterestQueries
 from studlenta.infrastructure.db.queries import PgEventQueries
 from studlenta.infrastructure.db.repositories import (
     PgCategoryRepository,
@@ -33,6 +34,7 @@ class PostgresTransaction:
     email_verifications: PgEmailVerificationRepository
     password_resets: PgPasswordResetRepository
     queries: PgEventQueries
+    interests: PgInterestQueries
 
     def __init__(self, pool: asyncpg.Pool) -> None:
         self._pool = pool
@@ -55,6 +57,7 @@ class PostgresTransaction:
         self.email_verifications = PgEmailVerificationRepository(conn)
         self.password_resets = PgPasswordResetRepository(conn)
         self.queries = PgEventQueries(conn)
+        self.interests = PgInterestQueries(conn)
         return self
 
     async def commit(self) -> None:

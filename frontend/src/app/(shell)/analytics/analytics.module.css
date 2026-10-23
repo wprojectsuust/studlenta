@@ -1,0 +1,251 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.lead {
+  color: var(--color-muted);
+  font-size: 14px;
+  max-width: 70ch;
+}
+.ranges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ranges button {
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 14px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border-color: var(--color-line);
+}
+.ranges button[aria-pressed="true"] {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  border-color: var(--color-accent);
+}
+
+.tiles {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.tiles li {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tileLabel {
+  font-size: 13px;
+  color: var(--color-muted);
+}
+.tileValue {
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.section {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.section h2 {
+  font-size: 17px;
+  font-weight: 700;
+}
+.note {
+  font-size: 13px;
+  color: var(--color-muted);
+  margin-top: -6px;
+}
+
+/* Столбики: толщина не больше 24px, скругление 4px только у вершины, зазор 2px. */
+.chart {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  height: 200px;
+}
+.axis {
+  position: relative;
+  width: 32px;
+  font-size: 12px;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+.axis span {
+  position: absolute;
+  right: 0;
+  transform: translateY(50%);
+}
+.plot {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  border-bottom: 1px solid var(--color-field-border);
+}
+.grid {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--color-line);
+}
+.slot {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.column {
+  width: 100%;
+  max-width: 24px;
+  min-height: 0;
+  background: var(--color-accent);
+  border-radius: 4px 4px 0 0;
+  position: relative;
+}
+.slot:hover .column {
+  filter: brightness(1.15);
+}
+.tip {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  flex-direction: column;
+  white-space: nowrap;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--color-ink);
+  color: var(--color-surface);
+  font-size: 12px;
+  z-index: 2;
+  pointer-events: none;
+}
+.tip b {
+  font-weight: 600;
+}
+.slot:hover .tip {
+  display: flex;
+  bottom: auto;
+  top: 0;
+}
+.dates {
+  display: flex;
+  justify-content: space-between;
+  padding-left: 40px;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.table summary {
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--color-accent-text);
+  min-height: 24px;
+}
+.table table,
+.top {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.table th,
+.table td,
+.top th,
+.top td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--color-line);
+}
+.top td {
+  text-align: right;
+}
+.top thead th:not(:first-child) {
+  text-align: right;
+}
+.top tbody th {
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.top tbody th a {
+  color: var(--color-ink);
+}
+.top small {
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.scroll {
+  overflow-x: auto;
+}
+
+.bars {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bars li {
+  display: grid;
+  grid-template-columns: minmax(140px, 220px) 1fr;
+  gap: 2px 12px;
+  align-items: center;
+}
+.barLabel {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 14px;
+}
+.barTrack {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.bar {
+  height: 16px;
+  min-width: 2px;
+  background: var(--color-accent);
+  border-radius: 0 4px 4px 0;
+}
+.barValue {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.barMeta {
+  grid-column: 2;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+@media (max-width: 720px) {
+  .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .bars li {
+    grid-template-columns: 1fr;
+  }
+  .barMeta {
+    grid-column: 1;
+  }
+}

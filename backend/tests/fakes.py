@@ -6,7 +6,7 @@
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field, replace
-from datetime import UTC, datetime, timedelta, tzinfo
+from datetime import UTC, date, datetime, timedelta, tzinfo
 from types import TracebackType
 from typing import Any, Self
 from uuid import UUID
@@ -14,13 +14,17 @@ from uuid import UUID
 from studlenta.application.dto import (
     AuthoredEvent,
     CalendarDay,
+    CandidateItem,
     CategoryRef,
     CategoryWithCount,
     EmailMessage,
     EmailVerificationRecord,
     EventDetails,
     FeedItem,
+    HistoryItem,
     ImageInfo,
+    InterestReport,
+    InterestTotals,
     ModerationLogEntry,
     MyEventItem,
     Notification,
@@ -31,6 +35,7 @@ from studlenta.application.ports import FeedQuery
 from studlenta.domain.categories import Category
 from studlenta.domain.errors import ConflictError
 from studlenta.domain.events import Event, EventStatus
+from studlenta.domain.recommendations import CoView
 from studlenta.domain.users import User
 
 NOW = datetime(2026, 10, 23, 7, 0, tzinfo=UTC)
@@ -362,6 +367,53 @@ class StubQueries:
         return self.calendar_result
 
 
+@dataclass
+class StubInterests:
+    """Просмотры хранит по-настоящему, выборки для рекомендаций и отчёт — заготовки теста."""
+
+    published: set[UUID] = field(default_factory=set)
+    views: set[tuple[UUID, str, date]] = field(default_factory=set)
+    history_result: list[HistoryItem] = field(default_factory=list)
+    candidates_result: list[CandidateItem] = field(default_factory=list)
+    co_views_result: list[CoView] = field(default_factory=list)
+    report_result: InterestReport = field(
+        default_factory=lambda: InterestReport("all", 30, InterestTotals(0, 0, 0, 0), [], [], [])
+    )
+    calls: list[tuple[str, tuple[Any, ...]]] = field(default_factory=list)
+
+    async def record_view(
+        self, event_id: UUID, viewer: str, user_id: UUID | None, day: date, now: datetime
+    ) -> bool:
+        if event_id not in self.published:
+            return False
+        self.views.add((event_id, viewer, day))
+        return True
+
+    async def history(
+        self, viewers: Sequence[str], user_id: UUID | None, since: datetime
+    ) -> list[HistoryItem]:
+        self.calls.append(("history", (list(viewers), user_id, since)))
+        return self.history_result
+
+    async def candidates(
+        self, starts_from: datetime, viewer_id: UUID | None, since: datetime, limit: int
+    ) -> list[CandidateItem]:
+        self.calls.append(("candidates", (starts_from, viewer_id, since, limit)))
+        return self.candidates_result
+
+    async def co_views(
+        self, seeds: Sequence[UUID], viewers: Sequence[str], since: datetime
+    ) -> list[CoView]:
+        self.calls.append(("co_views", (list(seeds), list(viewers), since)))
+        return self.co_views_result
+
+    async def report(
+        self, since: datetime, until: datetime, tz: tzinfo, author_id: UUID | None
+    ) -> InterestReport:
+        self.calls.append(("report", (since, until, tz, author_id)))
+        return self.report_result
+
+
 class FakeUnitOfWork:
     """Одна «база» на тест; ``commit`` запоминается, без него изменения откатываются."""
 
@@ -376,6 +428,7 @@ class FakeUnitOfWork:
         self.email_verifications = InMemoryEmailVerifications()
         self.password_resets = InMemoryPasswordResets()
         self.queries = StubQueries()
+        self.interests = StubInterests()
         self.commits = 0
         self._snapshot: dict[str, Any] = {}
 

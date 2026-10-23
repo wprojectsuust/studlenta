@@ -105,6 +105,7 @@ erDiagram
   users ||--o{ favorites : ""
   users ||--o{ notifications : ""
   users ||--o{ refresh_tokens : ""
+  events ||--o{ event_views : "просмотры (ADR-0014)"
   events {
     uuid id PK
     event_status status
@@ -123,6 +124,7 @@ erDiagram
 | `events_search_idx GIN (search)` | поиск с русской морфологией («концерты» находит «концерт») |
 | `events_queue_idx (status, submitted_at, id)` | очередь модерации |
 | `notifications_one_reminder UNIQUE … WHERE kind='reminder'` | напоминание приходит один раз |
+| `event_views PK (event_id, viewer, viewed_on)` | один просмотр на зрителя в день; `(viewer, viewed_at)` — история для «Для вас» |
 
 ## Чтение и запись
 

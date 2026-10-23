@@ -6,6 +6,7 @@ from enum import StrEnum
 from uuid import UUID
 
 from studlenta.domain.events import EventStatus
+from studlenta.domain.recommendations import Interaction
 from studlenta.domain.users import Role
 
 
@@ -201,3 +202,74 @@ class PasswordResetRecord:
     created_at: datetime
     expires_at: datetime
     used_at: datetime | None = None
+
+
+# --- Интересы: рекомендации и аналитика (ADR-0014) ---------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class HistoryItem:
+    """Чем человек интересовался: событие из истории и его заголовок для объяснений."""
+
+    interaction: Interaction
+    title: str
+
+
+@dataclass(frozen=True, slots=True)
+class CandidateItem:
+    item: FeedItem
+    lexemes: frozenset[str]
+    popularity: float
+
+
+@dataclass(frozen=True, slots=True)
+class RecommendedItem:
+    item: FeedItem
+    reason: str
+    reason_kind: str  # category | similar | also_viewed | popular | soon
+
+
+@dataclass(frozen=True, slots=True)
+class InterestTotals:
+    views: int
+    viewers: int
+    likes: int
+    favorites: int
+
+
+@dataclass(frozen=True, slots=True)
+class DailyViews:
+    day: date
+    views: int
+    viewers: int
+
+
+@dataclass(frozen=True, slots=True)
+class CategoryInterest:
+    category: CategoryRef
+    events: int
+    views: int
+    likes: int
+    favorites: int
+
+
+@dataclass(frozen=True, slots=True)
+class EventInterest:
+    id: UUID
+    title: str
+    category: CategoryRef
+    starts_at: datetime
+    views: int
+    viewers: int
+    likes: int
+    favorites: int
+
+
+@dataclass(frozen=True, slots=True)
+class InterestReport:
+    scope: str  # all — вся лента (модератор), mine — только свои события
+    days: int
+    totals: InterestTotals
+    daily: list[DailyViews]
+    categories: list[CategoryInterest]
+    top: list[EventInterest]

@@ -2,7 +2,7 @@ import { API_BASE } from "@/lib/config";
 import { createApiClient } from "./client";
 import type {
   AuthoredEvent, CalendarDay, CategoryCount, EventDetails, EventInput, EventStatus, FeedItem,
-  HistoryEntry, Inbox, MyEvent, Page, Period, Profile, Token,
+  HistoryEntry, Inbox, InterestReport, MyEvent, Page, Period, Profile, Recommended, Token,
 } from "./types";
 
 export { ApiError } from "./client";
@@ -38,6 +38,9 @@ export const endpoints = {
     api.request<Page>("/events", { query: { period: p.period, category: p.category, q: p.q, favorites: p.favorites || undefined, cursor: p.cursor, limit: p.limit } }),
   event: (id: string) => api.request<EventDetails>(`/events/${id}`),
   similar: (id: string) => api.request<FeedItem[]>(`/events/${id}/similar`),
+  recordView: (id: string, visitor_id: string) => api.request<void>(`/events/${id}/view`, { method: "POST", body: { visitor_id } }),
+  recommendations: (visitor: string) => api.request<Recommended[]>("/recommendations", { query: { visitor } }),
+  analytics: (days: number) => api.request<InterestReport>("/analytics/interests", { query: { days } }),
   categories: () => api.request<CategoryCount[]>("/categories"),
   calendar: (month: string) => api.request<CalendarDay[]>("/calendar", { query: { month } }),
   day: (date: string) => api.request<FeedItem[]>("/calendar/day", { query: { date } }),

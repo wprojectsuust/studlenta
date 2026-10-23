@@ -24,6 +24,14 @@
 | `AddToFavorites` / `RemoveFromFavorites` | `PUT` / `DELETE /events/{id}/favorite` | вошедший |
 | `SyncGuestFavorites` — перенос избранного гостя из localStorage | `POST /me/favorites/sync` | вошедший |
 
+## Интересы и рекомендации ([ADR-0014](adr/0014-interests-recommendations-analytics.md))
+
+| Use case | HTTP | Кто | Тесты |
+|----------|------|-----|-------|
+| `RecordEventView` — один просмотр на зрителя в день; гость — по анонимному id браузера | `POST /events/{id}/view` | все | unit, integration, e2e |
+| `ListRecommendations` — «Для вас» с объяснением причины | `GET /recommendations?visitor=` | все | unit (+ домен `recommend`), integration, e2e |
+| `GetInterestAnalytics` — итоги, дни, категории, топ; модератор — вся лента, автор — свои | `GET /analytics/interests?days=` | вошедший | unit, integration, e2e |
+
 ## Автор (экраны 3, 5)
 
 | Use case | HTTP | Переход |

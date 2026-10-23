@@ -202,3 +202,23 @@ test("страница «О проекте» и вход доступны", asyn
   await page.getByRole("button", { name: "Войти" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Неверная почта или пароль" })).toBeVisible();
 });
+
+test("интересы: просмотр события даёт подборку «Для вас», аналитика доступна и проходит WCAG", async ({ page }) => {
+  await page.goto("./");
+  await page.getByRole("region", { name: "Ближайшие" }).getByRole("link").filter({ hasText: "Открытый микрофон" }).first().click();
+  const seen = await page.getByRole("heading", { level: 1, name: /Открытый микрофон/ }).innerText();
+
+  await page.goto("./");
+  const forYou = page.getByRole("region", { name: /Для вас/ });
+  await expect(forYou.getByText(/Вы часто смотрите|Похоже на|Смотрели те, кто/).first()).toBeVisible();
+  await expect(forYou.getByRole("link").filter({ hasText: seen })).toHaveCount(0); // уже видел
+  await expectAccessible(page, "Лента с подборкой «Для вас»");
+
+  await login(page, moderatorEmail());
+  await page.getByRole("navigation", { name: "Разделы" }).getByRole("link", { name: "Аналитика" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Аналитика интересов" })).toBeVisible();
+  await expect(page.getByRole("list", { name: "Итоги за период" })).toBeVisible();
+  await page.getByRole("group", { name: "Период" }).getByRole("button", { name: "7 дней" }).click();
+  await expect(page.getByRole("img", { name: /Просмотры по дням/ })).toBeVisible();
+  await expectAccessible(page, "Аналитика");
+});

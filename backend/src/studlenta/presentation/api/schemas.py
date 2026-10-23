@@ -2,6 +2,7 @@
 чтобы сообщения об ошибках были одни и те же на любом входе.
 """
 
+from dataclasses import asdict
 from datetime import date, datetime
 from typing import Self
 from uuid import UUID
@@ -241,3 +242,83 @@ class ErrorBody(BaseModel):
 
 class ErrorOut(BaseModel):
     error: ErrorBody
+
+
+class ViewIn(BaseModel):
+    """Анонимный id браузера из localStorage; для вошедших можно не передавать."""
+
+    visitor_id: UUID | None = None
+
+
+class RecommendedOut(FeedItemOut):
+    reason: str
+    reason_kind: str
+
+    @classmethod
+    def from_recommended(cls, r: dto.RecommendedItem) -> Self:
+        item = FeedItemOut.of(r.item).model_dump()
+        return cls(**item, reason=r.reason, reason_kind=r.reason_kind)
+
+
+class InterestTotalsOut(BaseModel):
+    views: int
+    viewers: int
+    likes: int
+    favorites: int
+
+
+class DailyViewsOut(BaseModel):
+    day: date
+    views: int
+    viewers: int
+
+
+class CategoryInterestOut(BaseModel):
+    category: CategoryOut
+    events: int
+    views: int
+    likes: int
+    favorites: int
+
+
+class EventInterestOut(BaseModel):
+    id: UUID
+    title: str
+    category: CategoryOut
+    starts_at: datetime
+    views: int
+    viewers: int
+    likes: int
+    favorites: int
+
+
+class InterestReportOut(BaseModel):
+    scope: str
+    days: int
+    totals: InterestTotalsOut
+    daily: list[DailyViewsOut]
+    categories: list[CategoryInterestOut]
+    top: list[EventInterestOut]
+
+    @classmethod
+    def of(cls, r: dto.InterestReport) -> Self:
+        return cls(
+            scope=r.scope,
+            days=r.days,
+            totals=InterestTotalsOut(**asdict(r.totals)),
+            daily=[DailyViewsOut(**asdict(d)) for d in r.daily],
+            categories=[
+                CategoryInterestOut(
+                    category=CategoryOut.of(c.category),
+                    events=c.events,
+                    views=c.views,
+                    likes=c.likes,
+                    favorites=c.favorites,
+                )
+                for c in r.categories
+            ],
+            top=[
+                EventInterestOut(**{**asdict(e), "category": CategoryOut.of(e.category)})
+                for e in r.top
+            ],
+        )

@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { formatWhen } from "@/lib/format";
 import { useCategories, useQueue } from "@/lib/queries";
 import {
-  BellIcon, BookmarkIcon, CalendarIcon, CapIcon, FeedIcon, InfoIcon, PenIcon, PlusIcon, SearchIcon, ShieldIcon, UserIcon,
+  BellIcon, BookmarkIcon, ChartIcon, CalendarIcon, CapIcon, FeedIcon, InfoIcon, PenIcon, PlusIcon, SearchIcon, ShieldIcon, UserIcon,
 } from "./icons";
 import { CategoryIcon } from "./CategoryIcon";
 import { SkinPicker } from "./SkinPicker";
@@ -50,6 +50,9 @@ function Sidebar() {
             <ShieldIcon />Модерация
             {Boolean(queue.data?.length) && <span className={styles.badge} aria-label={`${queue.data?.length} на проверке`}>{queue.data?.length}</span>}
           </Link>
+        )}
+        {user && (
+          <Link href="/analytics" className={styles.navItem} aria-current={current(pathname === "/analytics")}><ChartIcon />Аналитика</Link>
         )}
         <Link href="/about" className={styles.navItem} aria-current={current(pathname === "/about")}><InfoIcon />О проекте</Link>
       </nav>

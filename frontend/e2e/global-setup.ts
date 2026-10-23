@@ -46,25 +46,26 @@ async function call(path: string, init: { method?: string; token?: string; body?
   return res.status === 204 ? null : res.json();
 }
 
-/** Одно опубликованное событие, чтобы сценарии гостя не зависели от порядка тестов. */
-async function seedPublishedEvent() {
+/** Два опубликованных концерта, чтобы сценарии гостя и «Для вас» не зависели от порядка тестов. */
+async function seedPublishedEvents() {
   const stamp = Date.now().toString(36);
   const email = `seed-${stamp}@uust.ru`;
   const author = await call("/auth/register", { method: "POST", body: { email, password: "password1", full_name: "Студсовет УУНиТ" } });
   await confirmEmail(email);
-  const starts = new Date(Date.now() + 2 * 86_400_000).toISOString();
-  const { id } = await call("/me/events", {
-    method: "POST", token: author.access_token,
-    body: { title: `Открытый микрофон ${stamp}`, summary: "Стихи, стендап, акустика — вход свободный.", body: "Выступить может любой студент: запишитесь у организаторов.",
-      category_id: 1, place: "Студклуб, малый зал", starts_at: starts, ends_at: null, cover_url: null },
-  });
-  await call(`/me/events/${id}/submit`, { method: "POST", token: author.access_token });
   const mod = await call("/auth/login", { method: "POST", body: { email: MODERATOR.email, password: MODERATOR.password } });
-  await call(`/moderation/events/${id}/approve`, { method: "POST", token: mod.access_token });
+  for (const [days, title] of [[2, `Открытый микрофон ${stamp}`], [5, `Акустический квартирник ${stamp}`]] as const) {
+    const { id } = await call("/me/events", {
+      method: "POST", token: author.access_token,
+      body: { title, summary: "Стихи, стендап, акустика — вход свободный.", body: "Выступить может любой студент: запишитесь у организаторов.",
+        category_id: 1, place: "Студклуб, малый зал", starts_at: new Date(Date.now() + days * 86_400_000).toISOString(), ends_at: null, cover_url: null },
+    });
+    await call(`/me/events/${id}/submit`, { method: "POST", token: author.access_token });
+    await call(`/moderation/events/${id}/approve`, { method: "POST", token: mod.access_token });
+  }
 }
 
 export default async function globalSetup() {
   createModerator();
   process.env.E2E_MODERATOR_EMAIL = MODERATOR.email;
-  await seedPublishedEvent();
+  await seedPublishedEvents();
 }
