@@ -27,6 +27,12 @@ repos:
         language: system
         files: ^backend/.*\.py$
         pass_filenames: false
+      - id: frontend
+        name: фронтенд (eslint · tsc · vitest)
+        entry: bash -c 'cd frontend && npm run -s check'
+        language: system
+        files: ^frontend/.*\.(ts|tsx|css|mjs)$
+        pass_filenames: false
       - id: conventional-commit
         name: формат сообщения коммита
         entry: python3 scripts/check_commit_message.py
