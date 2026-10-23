@@ -52,6 +52,8 @@
 }
 .item {
   flex: 0 0 260px;
+  /* без этого длинное «категория · место» (nowrap) растягивает карточку */
+  min-width: 0;
   scroll-snap-align: start;
 }
 .card {
@@ -90,6 +92,7 @@
   font-weight: 700;
 }
 .body {
+  min-width: 0;
   padding: 12px 14px 14px;
   display: flex;
   flex-direction: column;

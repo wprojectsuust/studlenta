@@ -144,6 +144,8 @@ test("гость: лента, фильтры, лайк просит войти, 
 
   const upcoming = page.getByRole("region", { name: "Ближайшие" });
   await expect(upcoming.getByRole("listitem").first()).toBeVisible();
+  const widths = await upcoming.getByRole("listitem").evaluateAll((items) => items.map((li) => Math.round(li.getBoundingClientRect().width)));
+  expect(new Set(widths).size, `карточки одной ширины: ${widths.join(", ")}`).toBe(1);
   await upcoming.getByRole("button", { name: "Прокрутить вперёд" }).click();
   await upcoming.getByRole("link").first().click();
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
