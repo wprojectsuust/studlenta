@@ -367,6 +367,9 @@ class TestBehindPathPrefix:
             created = await author.post("/me/events", json=event_body(cover_url=url))
             assert created.status_code == 201
 
+            feed = await client.get("/api/v1/events")
+            assert feed.headers["cache-control"].startswith("public")
+
             docs = await client.get("/api/v1/docs")
             assert "/studlenta/api/v1/openapi.json" in docs.text
 
@@ -401,3 +404,29 @@ class TestEmailVerification:
         letter = json.loads(sorted(outbox(app).glob("*.json"))[0].read_text(encoding="utf-8"))
         assert letter["subject"] == "Подтвердите почту — Студлента УУНиТ"
         assert "https://karrad.tech/studlenta/verify-email?token=" in letter["text"]
+
+
+class TestCaching:
+    async def test_cache_headers_and_instant_publication(
+        self, client: httpx.AsyncClient, pool: asyncpg.Pool
+    ) -> None:
+        guest = Api(client)
+        feed = await guest.get("/events")
+        assert feed.headers["cache-control"] == "public, max-age=15, stale-while-revalidate=60"
+        assert "authorization" in feed.headers["vary"].lower()
+        assert (await guest.get("/categories")).headers["cache-control"].startswith("public")
+        assert (await guest.get("/me")).headers["cache-control"] == "private, no-store"
+
+        author = await register(client, "cache@uust.ru")
+        assert (await author.get("/events")).headers["cache-control"] == "private, no-store"
+        assert (await author.get("/me/events")).headers["cache-control"] == "private, no-store"
+
+        mod = await moderator(client, pool)
+        assert (await guest.get("/events")).json()["items"] == []  # пустая лента закешировалась
+        event_id = await publish(author, mod)
+        # Одобрение сбросило кеш — событие видно сразу, а не через 15 секунд
+        assert [e["id"] for e in (await guest.get("/events")).json()["items"]] == [event_id]
+        assert (await guest.get(f"/events/{event_id}")).status_code == 200
+        assert (await author.post(f"/events/{event_id}/archive")).status_code == 204
+        assert (await guest.get("/events")).json()["items"] == []
+        assert (await guest.get(f"/events/{event_id}")).status_code == 404

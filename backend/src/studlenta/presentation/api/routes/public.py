@@ -48,13 +48,13 @@ async def list_events(
     limit: Annotated[int, Query(ge=1, le=50)] = 20,
 ) -> PageOut:
     params = FeedParams(period, category, q, favorites, cursor, limit)
-    page = await ListPublishedEvents(c.uow, c.clock, c.tz)(params, viewer)
+    page = await ListPublishedEvents(c.uow, c.clock, c.tz, c.cache)(params, viewer)
     return PageOut(items=[FeedItemOut.of(i) for i in page.items], next_cursor=page.next_cursor)
 
 
 @router.get("/events/{event_id}")
 async def get_event(event_id: UUID, c: Deps, viewer: OptionalActor) -> EventDetailsOut:
-    return EventDetailsOut.from_details(await GetPublishedEvent(c.uow)(event_id, viewer))
+    return EventDetailsOut.from_details(await GetPublishedEvent(c.uow, c.cache)(event_id, viewer))
 
 
 @router.get("/events/{event_id}/similar")
@@ -87,7 +87,7 @@ async def history(event_id: UUID, c: Deps, actor: CurrentActor) -> list[HistoryO
 
 @router.post("/events/{event_id}/archive", status_code=NoContent, tags=["Мои публикации"])
 async def archive(event_id: UUID, c: Deps, actor: CurrentActor) -> None:
-    await ArchiveEvent(c.uow, c.clock)(actor, event_id)
+    await ArchiveEvent(c.uow, c.clock, c.cache)(actor, event_id)
 
 
 @router.put("/events/{event_id}/like", status_code=NoContent, tags=["Реакции"])
@@ -114,7 +114,7 @@ async def unfavorite(event_id: UUID, c: Deps, actor: CurrentActor) -> None:
 async def categories(c: Deps) -> list[CategoryCountOut]:
     return [
         CategoryCountOut(**CategoryOut.of(x.category).model_dump(), upcoming_count=x.upcoming_count)
-        for x in await ListCategories(c.uow, c.clock, c.tz)()
+        for x in await ListCategories(c.uow, c.clock, c.tz, c.cache)()
     ]
 
 
@@ -123,7 +123,8 @@ async def calendar(
     c: Deps, month: Annotated[str, Query(pattern=r"^\d{4}-\d{2}$", examples=["2026-10"])]
 ) -> list[CalendarDayOut]:
     year, mon = (int(p) for p in month.split("-"))
-    return [CalendarDayOut.of(d) for d in await GetCalendarMonth(c.uow, c.tz)(year, mon)]
+    days = await GetCalendarMonth(c.uow, c.tz, c.cache)(year, mon)
+    return [CalendarDayOut.of(d) for d in days]
 
 
 @router.get("/calendar/day", tags=["Календарь"])

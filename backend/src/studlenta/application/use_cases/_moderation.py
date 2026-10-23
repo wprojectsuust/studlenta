@@ -3,6 +3,7 @@
 from collections.abc import Callable
 from uuid import UUID
 
+from studlenta.application.caching import NO_CACHE
 from studlenta.application.dto import (
     Actor,
     ModerationAction,
@@ -11,7 +12,7 @@ from studlenta.application.dto import (
     NotificationKind,
 )
 from studlenta.application.guards import load_event, require_moderator
-from studlenta.application.ports import Clock, IdGenerator, UnitOfWorkFactory
+from studlenta.application.ports import Clock, IdGenerator, ReadCache, UnitOfWorkFactory
 from studlenta.domain.errors import PermissionDeniedError
 from studlenta.domain.events import Event
 
@@ -19,9 +20,12 @@ from studlenta.domain.events import Event
 class ModerationDecision:
     action: ModerationAction
     kind: NotificationKind
+    changes_public_feed = False  # одобрение меняет публичную ленту — сбрасываем кеш
 
-    def __init__(self, uow: UnitOfWorkFactory, clock: Clock, ids: IdGenerator) -> None:
-        self._uow, self._clock, self._ids = uow, clock, ids
+    def __init__(
+        self, uow: UnitOfWorkFactory, clock: Clock, ids: IdGenerator, cache: ReadCache = NO_CACHE
+    ) -> None:
+        self._uow, self._clock, self._ids, self._cache = uow, clock, ids, cache
 
     async def _decide(
         self,
@@ -48,3 +52,5 @@ class ModerationDecision:
                 )
             )
             await uow.commit()
+        if self.changes_public_feed:
+            self._cache.invalidate()

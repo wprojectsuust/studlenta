@@ -8,6 +8,7 @@ import asyncpg
 from fastapi import Depends, Request
 
 from studlenta.application.ports import EmailSender
+from studlenta.infrastructure.cache import TtlCache
 from studlenta.infrastructure.db.uow import PostgresUnitOfWork
 from studlenta.infrastructure.files import LocalFileStorage, PillowImageInspector
 from studlenta.infrastructure.mail import FileOutboxSender, LogEmailSender, SmtpEmailSender
@@ -30,6 +31,7 @@ class Container:
     images: PillowImageInspector
     login_limiter: FailureLimiter
     mailer: EmailSender
+    cache: TtlCache
 
     @property
     def verify_link(self) -> str:
@@ -53,6 +55,7 @@ class Container:
             images=PillowImageInspector(),
             login_limiter=FailureLimiter(max_failures=10, window_seconds=60),
             mailer=_mailer(settings),
+            cache=TtlCache(max_entries=512),
         )
 
 

@@ -4,7 +4,7 @@
 а в юнит-тестах — в ``tests/fakes.py``.
 """
 
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime, tzinfo
 from types import TracebackType
@@ -54,6 +54,16 @@ class TokenService(Protocol):
 class EmailSender(Protocol):
     async def send(self, message: EmailMessage) -> None:
         """Отправляет письмо; при недоступности почты бросает исключение."""
+        ...
+
+
+class ReadCache(Protocol):
+    """Кеш публичного чтения: значение по ключу на ``ttl`` секунд."""
+
+    async def get_or_load[T](self, key: str, ttl: float, load: Callable[[], Awaitable[T]]) -> T: ...
+
+    def invalidate(self, prefix: str = "") -> None:
+        """Сбросить записи с префиксом (пустой — все)."""
         ...
 
 

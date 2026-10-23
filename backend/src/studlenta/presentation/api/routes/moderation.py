@@ -24,7 +24,7 @@ async def queue(
 
 @router.post("/events/{event_id}/approve", status_code=NoContent)
 async def approve(event_id: UUID, c: Deps, actor: CurrentActor) -> None:
-    await ApproveEvent(c.uow, c.clock, c.ids)(actor, event_id)
+    await ApproveEvent(c.uow, c.clock, c.ids, c.cache)(actor, event_id)
 
 
 @router.post("/events/{event_id}/request-changes", status_code=NoContent)

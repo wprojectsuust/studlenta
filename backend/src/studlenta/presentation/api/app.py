@@ -1,8 +1,9 @@
-from collections.abc import AsyncIterator
+import re
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 import asyncpg
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -12,6 +13,12 @@ from studlenta.presentation.api.errors import install_error_handlers
 from studlenta.presentation.api.routes import auth, author, moderation, public
 
 PREFIX = "/api/v1"
+# Публичное чтение, одинаковое для всех гостей (ленты, событие, календарь, категории).
+_PUBLIC_GET = re.compile(
+    r"^/api/v1/(events(/[0-9a-f-]{36}(/similar|/ics)?)?|categories|calendar(/day)?)$"
+)
+GUEST_CACHE = "public, max-age=15, stale-while-revalidate=60"
+NO_STORE = "private, no-store"
 
 
 def create_app(settings: Settings | None = None, pool: asyncpg.Pool | None = None) -> FastAPI:
@@ -48,6 +55,28 @@ def create_app(settings: Settings | None = None, pool: asyncpg.Pool | None = Non
         allow_headers=["Authorization", "Content-Type"],
     )
     install_error_handlers(app)
+
+    @app.middleware("http")
+    async def cache_headers(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        response = await call_next(request)
+        # За nginx путь может прийти с префиксом /studlenta (ASGI root_path) — срезаем его.
+        root = request.scope.get("root_path", "")
+        path = request.url.path
+        if root and path.startswith(root):
+            path = path[len(root) :]
+        if not path.startswith(PREFIX) or "cache-control" in response.headers:
+            return response
+        guest = "authorization" not in request.headers
+        public = request.method == "GET" and response.status_code == 200 and guest
+        if public and _PUBLIC_GET.match(path):
+            response.headers["Cache-Control"] = GUEST_CACHE
+            # Без токена и с токеном ответы разные (флаги «лайкнул») — кеш браузера их различает.
+            response.headers["Vary"] = "Authorization"
+        else:
+            response.headers["Cache-Control"] = NO_STORE
+        return response
 
     system = APIRouter(tags=["Служебное"])
 
