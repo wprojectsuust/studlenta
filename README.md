@@ -4,7 +4,7 @@
 модератор одобряет, возвращает на доработку или отклоняет — и только после этого событие
 появляется в ленте. Прототип для хакатона УУНиТ.
 
-- **Прод (API):** https://karrad.tech/studlenta/api/v1/docs — фронтенд в работе
+- **Прод:** https://karrad.tech/studlenta (API: `/studlenta/api/v1/docs`)
 - **Деплой и CI/CD:** [docs/deploy.md](docs/deploy.md)
 - **Дизайн (холст):** https://claude.ai/artifact/SMmtsEczRF13qMLb1YxwEw — 9 экранов, 4 скина, WCAG 2.1 AA
 - **Спецификация для фронтенда:** [docs/design/handoff.md](docs/design/handoff.md)
@@ -21,9 +21,14 @@
 
 ## Стек
 
-FastAPI (async) · asyncpg с **нативным SQL** (без ORM) · PostgreSQL 16 · onion-архитектура,
-**отдельный use case на каждый сценарий** · pytest: unit / integration (testcontainers) / e2e ·
-ruff, mypy `--strict`, import-linter · Docker, GitHub Actions → GHCR → VPS.
+**Бэкенд:** FastAPI (async) · asyncpg с **нативным SQL** (без ORM) · PostgreSQL 16 ·
+onion-архитектура, **отдельный use case на каждый сценарий** · pytest: unit / integration
+(testcontainers) / e2e · ruff, mypy `--strict`, import-linter.
+
+**Фронтенд:** Next.js 16 (App Router, SSR страницы события для превью в соцсетях) · TanStack Query ·
+CSS-переменные и 4 скина · Vitest + Testing Library · Playwright + axe (WCAG 2.1 AA) на полном стеке.
+
+**Поставка:** Docker · GitHub Actions → GHCR → VPS с автооткатом.
 
 Почему так — в [ADR](docs/adr/). Как устроено — [docs/architecture.md](docs/architecture.md).
 
@@ -38,17 +43,21 @@ make install                                # зависимости + git-ху�
 cp .env.example .env                        # и впишите STUDLENTA_JWT_SECRET (≥ 32 символа)
 make migrate                                # схема и категории
 make moderator EMAIL=mod@uust.ru NAME="Модератор"
-make run                                    # http://localhost:8000/api/v1/docs
+STUDLENTA_ROOT_PATH=/studlenta make run      # API на :8000
+
+cd ../frontend
+npm ci
+npm run dev                                 # http://localhost:3000/studlenta (проксирует /api в :8000)
 ```
 
-Всё в контейнерах: `docker compose up --build` из корня.
+Всё в контейнерах: `docker compose up --build` из корня → http://localhost:3000/studlenta.
 
 ## Проверки
 
 ```bash
-cd backend
-make check          # ruff + mypy --strict + границы слоёв + все тесты с покрытием ≥ 90 %
-make test-unit      # только юнит, без Docker, < 1 c
+cd backend && make check     # ruff + mypy --strict + границы слоёв + тесты, покрытие ≥ 90 %
+cd frontend && npm run check # eslint + tsc + vitest (включая контраст токенов всех скинов)
+cd frontend && npm run e2e   # Playwright + axe; нужен поднятый стек (см. CONTRIBUTING)
 ```
 
 ## Структура
@@ -64,6 +73,11 @@ backend/
     unit/            домен и use cases на in-memory фейках
     integration/     SQL-репозитории на настоящем PostgreSQL
     e2e/             сценарии через HTTP
+frontend/
+  src/app/           страницы (App Router): лента, событие, календарь, кабинет, модерация, вход
+  src/components/    UI: карточка, форма, панель модерации, каркас с сайдбаром и таб-баром
+  src/lib/           API-клиент, авторизация, запросы, форматирование дат, скины
+  e2e/               сценарии Playwright + axe
 deploy/              прод: compose, скрипт деплоя, nginx
 docs/                архитектура, ADR, сценарии, дизайн, деплой
 ```

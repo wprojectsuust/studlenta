@@ -67,6 +67,28 @@ presentation → infrastructure → application → domain
   Применённые миграции не редактируем никогда.
 - Инварианты, которые можно выразить в БД (enum, CHECK, UNIQUE), выражаем и там, и в домене.
 
+### Фронтенд
+
+- Next.js 16 отличается от того, что вы помните: перед изменением роутинга, кеша или метаданных
+  прочитайте раздел в `frontend/node_modules/next/dist/docs/` (см. `frontend/AGENTS.md`).
+- Логика — в `src/lib` и тестируется Vitest первой (TDD так же, как на бэкенде): API-клиент,
+  форматирование дат, хуки. Компоненты с поведением (форма, модерация, карточка) — тест на
+  Testing Library по ролям и подписям, а не по классам.
+- Цвета — только токены из `globals.css`. Новый токен или скин → тест `contrast.test.ts`
+  проверит WCAG сам.
+- Новый экран или сценарий → e2e в `frontend/e2e/` с `expectAccessible(page, …)` (axe).
+- Только нативные `<button>` / `<a>`, у каждого поля `<label>`, цели не меньше 44×44.
+
+E2E локально:
+
+```bash
+docker compose up -d db
+cd backend && STUDLENTA_ROOT_PATH=/studlenta STUDLENTA_SECURE_COOKIES=false make run   # :8000
+cd frontend && npm run build && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/
+PORT=3000 API_INTERNAL_URL=http://localhost:8000 node .next/standalone/server.js        # :3000
+DATABASE_URL=… npm run e2e   # глобальная подготовка создаёт модератора через CLI бэкенда
+```
+
 ## 4. Стиль
 
 - Python 3.13, ruff (format + lint), mypy `--strict`. Строка ≤ 100 символов.
@@ -88,7 +110,7 @@ presentation → infrastructure → application → domain
 ```
 
 Типы: `feat`, `fix`, `test`, `refactor`, `docs`, `chore`, `build`, `ci`, `perf`, `style`,
-`revert`. Области: `domain`, `feed`, `moderation`, `auth`, `author`, `api`, `db`, `deploy`.
+`revert`. Области: `domain`, `feed`, `moderation`, `auth`, `author`, `api`, `db`, `deploy`, `web`.
 
 ## 6. Pull request
 
@@ -108,6 +130,8 @@ presentation → infrastructure → application → domain
 | Правило | Pre-commit | CI |
 |---------|:---------:|:--:|
 | Стиль (ruff format / lint, включая bandit-правила S) | ✓ | ✓ |
+| Фронтенд: eslint, tsc, Vitest (вкл. контраст токенов) | ✓ | ✓ |
+| Фронтенд: Playwright + axe (WCAG 2.1 AA) на полном стеке | — | ✓ |
 | Типы (mypy --strict) | ✓ | ✓ |
 | Границы слоёв (import-linter) | ✓ | ✓ |
 | Юнит-тесты | ✓ | ✓ |

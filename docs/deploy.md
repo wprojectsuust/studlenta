@@ -1,6 +1,6 @@
 # Деплой
 
-Прод: **https://karrad.tech/studlenta/** (API: `/studlenta/api/v1`, Swagger: `/studlenta/api/v1/docs`).
+Прод: **https://karrad.tech/studlenta** (API: `/studlenta/api/v1`, Swagger: `/studlenta/api/v1/docs`).
 Решение и альтернативы — [ADR-0010](adr/0010-deploy-ghcr-and-ssh-forced-command.md).
 
 ## Пайплайн
@@ -8,11 +8,12 @@
 ```mermaid
 flowchart LR
   push[push в main] --> checks[ruff · mypy · import-linter]
-  push --> tests[unit · integration · e2e\nPostgreSQL 16]
-  checks --> image[сборка образа\nghcr.io/wprojectsuust/studlenta-api:sha]
-  tests --> image
-  image --> deploy[SSH → deploy.sh sha\npull · up · health · откат]
-  deploy --> smoke[curl /studlenta/api/v1/health]
+  push --> tests[бэкенд: unit · integration · e2e\nPostgreSQL 16]
+  push --> web[фронтенд: eslint · tsc · vitest]
+  push --> e2e[Playwright + axe\nNext → API → PostgreSQL]
+  checks & tests & web & e2e --> image[образы api и web\nghcr.io/wprojectsuust/studlenta-*:sha]
+  image --> deploy[SSH → deploy.sh sha\npull обоих · up · health · откат]
+  deploy --> smoke[curl API health и /studlenta]
 ```
 
 PR проходит те же проверки и тесты плюс формат коммитов, но не собирает образ и не деплоит.
@@ -23,13 +24,17 @@ PR проходит те же проверки и тесты плюс форма
 /opt/studlenta/
   docker-compose.yml   ← deploy/docker-compose.prod.yml
   deploy.sh            ← deploy/deploy.sh
-  .env                 секреты (создаются на сервере, в git их нет) + API_TAG текущей версии
+  .env                 секреты (создаются на сервере, в git их нет) + RELEASE_TAG текущего релиза
   .docker/             отдельный docker-конфиг для входа в GHCR на время деплоя
 ```
 
-- API слушает `127.0.0.1:5010`, наружу только через nginx (`deploy/nginx-studlenta.conf`
-  внутри сайта karrad.tech).
-- Лимиты памяти: API 256 МБ, Postgres 192 МБ — на сервере работает соседний прод.
+- API слушает `127.0.0.1:5010`, веб — `127.0.0.1:5011`; наружу только через nginx:
+  `/etc/nginx/snippets/studlenta.conf` (+ `studlenta-proxy.conf`) подключён одной строкой
+  `include` в сайт karrad.tech. Копии — `deploy/nginx-studlenta*.conf`; nginx правит
+  администратор вручную (ключ CI этого не может — так задумано).
+- Лимиты памяти: API 256 МБ, веб 192 МБ, Postgres 192 МБ — на сервере работает соседний прод.
+- API и веб выкатываются одним тегом (`RELEASE_TAG` = git sha); если хоть один не стал
+  healthy — откатываются оба.
 - Миграции применяются при старте контейнера (идемпотентно, под advisory lock).
 
 ## Секреты GitHub (environment `production`)
@@ -55,7 +60,7 @@ ssh karrad 'cd /opt/studlenta && docker compose exec -e STUDLENTA_NEW_PASSWORD=.
 ssh karrad 'cd /opt/studlenta && docker compose logs --tail 100 api'
 
 # откат вручную на прошлую версию: перезапустить нужный workflow run в Actions
-# или на сервере: sed -i 's/^API_TAG=.*/API_TAG=<sha>/' .env && docker compose up -d
+# или на сервере: sed -i 's/^RELEASE_TAG=.*/RELEASE_TAG=<sha>/' .env && docker compose up -d
 
 # бэкап базы
 ssh karrad 'cd /opt/studlenta && docker compose exec -T db pg_dump -U studlenta studlenta' > backup.sql
