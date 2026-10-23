@@ -89,8 +89,8 @@ export function FeedView() {
             <EmptyState title="Событий нет">Попробуйте другой период или категорию.</EmptyState>
           )
         )}
-        {items.map((item) => (
-          <EventCard key={item.id} item={item} onLike={() => void reactions.toggleLike(item)} onFavorite={() => void reactions.toggleFavorite(item)} />
+        {items.map((item, index) => (
+          <EventCard key={item.id} item={item} priority={index < 2} onLike={() => void reactions.toggleLike(item)} onFavorite={() => void reactions.toggleFavorite(item)} />
         ))}
         {feed.hasNextPage && !guestFavorites && (
           <div ref={sentinel} style={{ display: "flex", justifyContent: "center" }}>

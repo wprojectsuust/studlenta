@@ -6,13 +6,13 @@ import { BookmarkIcon, CalendarIcon, HeartIcon, PinIcon } from "./icons";
 import { TagPill } from "./TagPill";
 import styles from "./EventCard.module.css";
 
-type Props = { item: FeedItem; now?: Date; onLike: () => void; onFavorite: () => void };
+type Props = { item: FeedItem; now?: Date; onLike: () => void; onFavorite: () => void; priority?: boolean };
 
-export function EventCard({ item, now = new Date(), onLike, onFavorite }: Props) {
+export function EventCard({ item, now = new Date(), onLike, onFavorite, priority = false }: Props) {
   return (
     <article className={styles.card} aria-labelledby={`t-${item.id}`}>
       <div className={styles.media}>
-        <Cover src={item.cover_url} category={item.category} />
+        <Cover src={item.cover_url} category={item.category} sizes="(max-width: 760px) 100vw, 220px" priority={priority} />
         {isToday(item.starts_at, now) && (
           <span className={styles.badge} data-badge>
             Сегодня

@@ -2,6 +2,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Cover } from "@/components/Cover";
 import { CardSkeleton, EmptyState, ErrorBanner } from "@/components/Feedback";
@@ -19,6 +20,7 @@ const NEUTRAL = { id: 0, slug: "", name: "", color: "#4B5563" };
 export function MyEventsView() {
   const auth = useRequireAuth();
   const client = useQueryClient();
+  const router = useRouter();
   const [filter, setFilter] = useState<EventStatus | "all">("all");
   const all = useMyEvents();
   const [message, setMessage] = useState<string | null>(null);
@@ -60,6 +62,12 @@ export function MyEventsView() {
     }
   }
 
+  // После выхода — в ленту, а не на форму входа (её бы показала защита закрытой страницы).
+  async function logout() {
+    router.replace("/");
+    await auth.logout();
+  }
+
   if (auth.status !== "authenticated") return <CardSkeleton />;
 
   return (
@@ -69,7 +77,7 @@ export function MyEventsView() {
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           {canModerate(auth.user?.role) && <Link href="/moderation" className="btn btn-secondary">Модерация</Link>}
           <Link href="/my/new" className="btn btn-primary"><PlusIcon size={18} />Новое событие</Link>
-          <button type="button" className="btn btn-ghost" onClick={() => void auth.logout()}>Выйти</button>
+          <button type="button" className="btn btn-ghost" onClick={() => void logout()}>Выйти</button>
         </div>
       </div>
       <p style={{ color: "var(--color-muted)" }}>{auth.user?.full_name} · {auth.user?.email}</p>
@@ -96,7 +104,7 @@ export function MyEventsView() {
       )}
       {items.map((e) => (
         <article key={e.id} className="card" style={{ display: "flex", flexWrap: "wrap", gap: "16px 20px", padding: 14 }} aria-labelledby={`my-${e.id}`}>
-          <Cover src={e.cover_url} category={NEUTRAL} style={{ width: 132, height: 92, borderRadius: 10, flex: "none" }} />
+          <Cover src={e.cover_url} category={NEUTRAL} sizes="132px" style={{ width: 132, height: 92, borderRadius: 10, flex: "none" }} />
           <div style={{ flex: "1 1 320px", minWidth: 0, display: "flex", flexDirection: "column", gap: 6 }}>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", fontSize: 13, color: "var(--color-muted)" }}>
               <StatusBadge status={e.status} />

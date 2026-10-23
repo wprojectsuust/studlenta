@@ -76,6 +76,7 @@ export async function login(page: Page, email: string) {
 export async function logout(page: Page) {
   await page.goto("my");
   await page.getByRole("button", { name: "Выйти" }).click();
+  await expect(page).toHaveURL(/\/studlenta\/?$/);
   await expect(page.getByRole("link", { name: "Войти" })).toBeVisible();
 }
 

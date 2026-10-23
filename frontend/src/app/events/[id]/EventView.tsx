@@ -37,7 +37,8 @@ export function EventView({ initial }: { initial: EventDetails }) {
   return (
     <div className={styles.layout}>
       <article className={`card ${styles.article}`} aria-labelledby="event-title">
-        <Cover src={event.cover_url} category={event.category} alt={`Обложка: ${event.title}`} className={styles.hero} />
+        <Cover src={event.cover_url} category={event.category} alt={`Обложка: ${event.title}`} className={styles.hero}
+          sizes="(max-width: 760px) 100vw, 900px" priority />
         <div className={styles.head}>
           <div className={styles.meta}>
             <TagPill category={event.category} />
@@ -93,7 +94,7 @@ export function EventView({ initial }: { initial: EventDetails }) {
           {similar.data?.length === 0 && <p style={{ fontSize: 14, color: "var(--color-muted)" }}>Пока нет других событий в этой категории.</p>}
           {similar.data?.map((s) => (
             <Link key={s.id} href={`/events/${s.id}`} style={{ display: "flex", gap: 12, alignItems: "center", textDecoration: "none" }}>
-              <Cover src={s.cover_url} category={s.category} style={{ width: 56, height: 56, borderRadius: 10, flex: "none" }} />
+              <Cover src={s.cover_url} category={s.category} sizes="56px" style={{ width: 56, height: 56, borderRadius: 10, flex: "none" }} />
               <span><strong style={{ display: "block", fontSize: 14 }}>{s.title}</strong><span style={{ fontSize: 13, color: "var(--color-muted)" }}>{formatWhen(s.starts_at)} · {s.place}</span></span>
             </Link>
           ))}

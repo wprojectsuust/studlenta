@@ -79,7 +79,7 @@ export function ModerationView() {
                 <li key={e.id}>
                   <button type="button" aria-pressed={on} onClick={() => setSelected(e.id)} className="card"
                     style={{ width: "100%", display: "flex", gap: 14, padding: 12, textAlign: "left", borderWidth: 2, borderColor: on ? "var(--color-accent)" : "var(--color-line)" }}>
-                    <Cover src={e.cover_url} category={e.category ?? NEUTRAL} style={{ width: 88, height: 64, borderRadius: 8, flex: "none" }} />
+                    <Cover src={e.cover_url} category={e.category ?? NEUTRAL} sizes="88px" style={{ width: 88, height: 64, borderRadius: 8, flex: "none" }} />
                     <span style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
                       <strong style={{ fontSize: 15 }}>{e.title}</strong>
                       <span style={{ fontSize: 13, color: "var(--color-muted)" }}>{e.author_name}{e.submitted_at ? ` · ${formatWhen(e.submitted_at)}` : ""}</span>
