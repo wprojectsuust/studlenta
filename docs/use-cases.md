@@ -32,7 +32,7 @@
 | `GetEventForEditing` | `GET /me/events/{id}` | — (автор или модератор) |
 | `UpdateDraft` | `PUT /me/events/{id}` | `draft`, `changes_requested` |
 | `DeleteDraft` | `DELETE /me/events/{id}` | только `draft` |
-| `SubmitForModeration` | `POST /me/events/{id}/submit` | `draft`/`changes_requested` → `pending` |
+| `SubmitForModeration` — только с подтверждённой почтой | `POST /me/events/{id}/submit` | `draft`/`changes_requested` → `pending` |
 | `WithdrawSubmission` | `POST /me/events/{id}/withdraw` | `pending` → `draft` |
 | `ArchiveEvent` | `POST /events/{id}/archive` | `published` → `archived` (автор или модератор) |
 | `ListMyEvents` | `GET /me/events?status=` | — |
@@ -55,7 +55,9 @@
 
 | Use case | HTTP |
 |----------|------|
-| `RegisterUser` — роль `author`, сразу вход | `POST /auth/register` |
+| `RegisterUser` — роль `author`, сразу вход; письмо подтверждения уходит фоном | `POST /auth/register` |
+| `RequestEmailVerification` — письмо со ссылкой, не чаще раза в минуту | `POST /me/verify-email` |
+| `VerifyEmail` — переход по ссылке из письма | `POST /auth/verify-email` |
 | `LoginUser` | `POST /auth/login` |
 | `RefreshSession` — ротация refresh-токена | `POST /auth/refresh` (cookie) |
 | `Logout` | `POST /auth/logout` |

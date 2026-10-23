@@ -47,6 +47,13 @@ PR проходит те же проверки и тесты плюс форма
 
 Токен для скачивания образа — `GITHUB_TOKEN` джобы, живёт только во время деплоя.
 
+## Почта
+
+Письма подтверждения уходят с `studlenta@karrad.tech` через postfix этого же сервера
+(submission 587, STARTTLS, DKIM подписывает opendkim) — [ADR-0012](adr/0012-email-verification.md).
+Пароль ящика — `SMTP_PASSWORD` в `/opt/studlenta/.env`. Проверить отправку:
+`journalctl -u postfix@- --since "10 min ago" | grep studlenta`.
+
 ## Частые операции
 
 Команды выполняются администратором со своим ключом, а не ключом CI.
