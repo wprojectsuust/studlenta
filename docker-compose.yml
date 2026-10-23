@@ -25,6 +25,7 @@ services:
       STUDLENTA_SECURE_COOKIES: "false"
       STUDLENTA_MEDIA_ROOT: /app/media
       STUDLENTA_ROOT_PATH: /studlenta
+      # Без SMTP письма со ссылкой подтверждения печатаются в лог API (docker compose logs api)
     ports: ["8000:8000"]
     volumes: [media:/app/media]
 

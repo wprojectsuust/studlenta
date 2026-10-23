@@ -33,6 +33,16 @@ services:
       STUDLENTA_SECURE_COOKIES: "true"
       STUDLENTA_CORS_ORIGINS: https://karrad.tech
       STUDLENTA_MEDIA_ROOT: /app/media
+      STUDLENTA_PUBLIC_URL: https://karrad.tech/studlenta
+      # Почта (ADR-0012): ящик studlenta@karrad.tech на postfix этого же сервера.
+      STUDLENTA_SMTP_HOST: mail.karrad.tech
+      STUDLENTA_SMTP_PORT: "587"
+      STUDLENTA_SMTP_USERNAME: studlenta@karrad.tech
+      STUDLENTA_SMTP_PASSWORD: ${SMTP_PASSWORD:?SMTP_PASSWORD не задан в .env}
+      STUDLENTA_MAIL_FROM: studlenta@karrad.tech
+    # mail.karrad.tech внутри контейнера — это хост: письмо идёт в локальный postfix,
+    # а имя совпадает с TLS-сертификатом.
+    extra_hosts: ["mail.karrad.tech:host-gateway"]
     ports: ["127.0.0.1:5010:8000"]   # наружу — только через nginx
     volumes: [media:/app/media]
     mem_limit: 256m

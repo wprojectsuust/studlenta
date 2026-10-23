@@ -81,6 +81,10 @@ jobs:
       STUDLENTA_ROOT_PATH: /studlenta
       STUDLENTA_SECURE_COOKIES: "false"
       STUDLENTA_MEDIA_ROOT: /tmp/media
+      # Письма в e2e не уходят наружу: API пишет их в файлы, Playwright берёт оттуда ссылку.
+      STUDLENTA_MAIL_OUTBOX_DIR: /tmp/studlenta-mail
+      STUDLENTA_PUBLIC_URL: http://localhost:3000/studlenta
+      E2E_MAIL_OUTBOX: /tmp/studlenta-mail
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
