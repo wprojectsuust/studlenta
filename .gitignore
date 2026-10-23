@@ -23,3 +23,7 @@ frontend/dist/
 .idea/
 .vscode/
 *.swp
+
+# Playwright
+frontend/test-results/
+frontend/playwright-report/
