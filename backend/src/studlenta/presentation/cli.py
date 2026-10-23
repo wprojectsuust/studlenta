@@ -5,6 +5,7 @@ import asyncio
 import getpass
 import os
 import sys
+from pathlib import Path
 
 import asyncpg
 
@@ -59,6 +60,24 @@ def rebuild_covers() -> None:  # pragma: no cover - разовая команд�
 
     settings = Settings()  # type: ignore[call-arg]
     print(f"Обновлено обложек: {rebuild(settings.media_root, PillowImageInspector())}")
+
+
+def cleanup_media() -> None:  # pragma: no cover - запускается по расписанию
+    from studlenta.infrastructure.files import cleanup_orphan_covers
+    from studlenta.infrastructure.settings import Settings
+
+    settings = Settings()  # type: ignore[call-arg]
+
+    async def referenced() -> set[str]:
+        pool = await _with_pool()
+        try:
+            rows = await pool.fetch("SELECT cover_url FROM events WHERE cover_url IS NOT NULL")
+        finally:
+            await pool.close()
+        return {Path(r["cover_url"]).stem for r in rows}
+
+    removed = cleanup_orphan_covers(settings.media_root, asyncio.run(referenced()))
+    print(f"Удалено неиспользуемых обложек: {len(removed)}")
 
 
 def send_reminders() -> None:  # pragma: no cover - запускается по расписанию

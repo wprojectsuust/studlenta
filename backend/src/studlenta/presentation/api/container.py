@@ -38,6 +38,10 @@ class Container:
         return f"{self.settings.public_url.rstrip('/')}/verify-email"
 
     @property
+    def reset_link(self) -> str:
+        return f"{self.settings.public_url.rstrip('/')}/reset-password"
+
+    @property
     def tz(self) -> tzinfo:
         return self.settings.tz
 

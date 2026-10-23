@@ -9,15 +9,19 @@ from studlenta.application.use_cases.logout import Logout
 from studlenta.application.use_cases.refresh_session import RefreshSession
 from studlenta.application.use_cases.register_user import RegisterUser
 from studlenta.application.use_cases.request_email_verification import RequestEmailVerification
+from studlenta.application.use_cases.request_password_reset import RequestPasswordReset
+from studlenta.application.use_cases.reset_password import ResetPassword
 from studlenta.application.use_cases.verify_email import VerifyEmail
 from studlenta.domain.errors import AuthenticationError
 from studlenta.presentation.api.container import Container, Deps
 from studlenta.presentation.api.deps import CurrentActor
 from studlenta.presentation.api.rate_limit import TooManyAttemptsError
 from studlenta.presentation.api.schemas import (
+    EmailIn,
     LoginIn,
     ProfileOut,
     RegisterIn,
+    ResetPasswordIn,
     SentOut,
     TokenIn,
     TokenOut,
@@ -109,3 +113,17 @@ async def me(c: Deps, actor: CurrentActor) -> ProfileOut:
         unread_notifications=p.unread_notifications,
         email_verified=p.email_verified,
     )
+
+
+@router.post("/auth/password-reset", status_code=status.HTTP_202_ACCEPTED)
+async def request_password_reset(body: EmailIn, c: Deps, background: BackgroundTasks) -> SentOut:
+    # Всегда 202 и одинаковый ответ — по нему нельзя узнать, есть ли такой аккаунт.
+    background.add_task(
+        RequestPasswordReset(c.uow, c.clock, c.tokens, c.mailer, c.reset_link), body.email
+    )
+    return SentOut(sent=True)
+
+
+@router.post("/auth/password-reset/confirm", status_code=status.HTTP_204_NO_CONTENT)
+async def confirm_password_reset(body: ResetPasswordIn, c: Deps) -> None:
+    await ResetPassword(c.uow, c.clock, c.tokens, c.hasher)(body.token, body.password)

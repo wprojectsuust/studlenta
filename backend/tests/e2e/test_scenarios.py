@@ -430,3 +430,48 @@ class TestCaching:
         assert (await author.post(f"/events/{event_id}/archive")).status_code == 204
         assert (await guest.get("/events")).json()["items"] == []
         assert (await guest.get(f"/events/{event_id}")).status_code == 404
+
+
+class TestPasswordReset:
+    async def test_forgot_password_flow(self, client: httpx.AsyncClient, app: FastAPI) -> None:
+        await register(client, "forgot@uust.ru", verify=False)
+        old_cookie = client.cookies.get("refresh_token")
+
+        for email in ("forgot@uust.ru", "nobody@uust.ru"):  # ответ одинаковый — аккаунт не угадать
+            r = await client.post("/api/v1/auth/password-reset", json={"email": email})
+            assert (r.status_code, r.json()) == (202, {"sent": True})
+
+        letters = [
+            json.loads(p.read_text(encoding="utf-8")) for p in sorted(outbox(app).glob("*.json"))
+        ]
+        reset = [m for m in letters if m["subject"].startswith("Новый пароль")]
+        assert [m["to"] for m in reset] == ["forgot@uust.ru"]
+        token = reset[0]["text"].split("reset-password?token=")[1].split()[0]
+
+        weak = await client.post(
+            "/api/v1/auth/password-reset/confirm", json={"token": token, "password": "short"}
+        )
+        assert weak.status_code == 422
+        done = await client.post(
+            "/api/v1/auth/password-reset/confirm",
+            json={"token": token, "password": "brand-new-pass"},
+        )
+        assert done.status_code == 204
+        again = await client.post(
+            "/api/v1/auth/password-reset/confirm", json={"token": token, "password": "another-pass"}
+        )
+        assert again.status_code == 422
+
+        old = await client.post(
+            "/api/v1/auth/login", json={"email": "forgot@uust.ru", "password": "password1"}
+        )
+        assert old.status_code == 401
+        new = await client.post(
+            "/api/v1/auth/login", json={"email": "forgot@uust.ru", "password": "brand-new-pass"}
+        )
+        assert new.status_code == 200
+        me = await Api(client, new.json()["access_token"]).get("/me")
+        assert me.json()["email_verified"] is True
+
+        client.cookies.set("refresh_token", old_cookie)
+        assert (await client.post("/api/v1/auth/refresh")).status_code == 401

@@ -192,3 +192,12 @@ class EmailVerificationRecord:
     user_id: UUID
     created_at: datetime
     expires_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class PasswordResetRecord:
+    token_hash: str
+    user_id: UUID
+    created_at: datetime
+    expires_at: datetime
+    used_at: datetime | None = None

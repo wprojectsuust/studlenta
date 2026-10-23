@@ -13,6 +13,7 @@ from studlenta.infrastructure.db.repositories import (
     PgEventRepository,
     PgModerationLogRepository,
     PgNotificationRepository,
+    PgPasswordResetRepository,
     PgReactionRepository,
     PgRefreshTokenRepository,
     PgUserRepository,
@@ -30,6 +31,7 @@ class PostgresTransaction:
     notifications: PgNotificationRepository
     refresh_tokens: PgRefreshTokenRepository
     email_verifications: PgEmailVerificationRepository
+    password_resets: PgPasswordResetRepository
     queries: PgEventQueries
 
     def __init__(self, pool: asyncpg.Pool) -> None:
@@ -51,6 +53,7 @@ class PostgresTransaction:
         self.notifications = PgNotificationRepository(conn)
         self.refresh_tokens = PgRefreshTokenRepository(conn)
         self.email_verifications = PgEmailVerificationRepository(conn)
+        self.password_resets = PgPasswordResetRepository(conn)
         self.queries = PgEventQueries(conn)
         return self
 

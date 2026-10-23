@@ -15,6 +15,7 @@ from studlenta.application.dto import (
     ModerationLogEntry,
     Notification,
     NotificationKind,
+    PasswordResetRecord,
     RefreshTokenRecord,
 )
 from studlenta.domain.categories import Category
@@ -130,11 +131,49 @@ class PgUserRepository:
         except asyncpg.UniqueViolationError as exc:
             raise ConflictError("Почта уже зарегистрирована") from exc
 
+    async def update_password(self, user_id: UUID, password_hash: str) -> None:
+        await self._conn.execute(
+            "UPDATE users SET password_hash = $2 WHERE id = $1", user_id, password_hash
+        )
+
     async def mark_email_verified(self, user_id: UUID, now: datetime) -> None:
         await self._conn.execute(
             "UPDATE users SET email_verified_at = $2 WHERE id = $1 AND email_verified_at IS NULL",
             user_id, now,
         )  # fmt: skip
+
+
+class PgPasswordResetRepository:
+    def __init__(self, conn: Conn) -> None:
+        self._conn = conn
+
+    async def add(self, record: PasswordResetRecord) -> None:
+        await self._conn.execute(
+            "INSERT INTO password_resets (token_hash, user_id, created_at, expires_at) "
+            "VALUES ($1, $2, $3, $4)",
+            record.token_hash, record.user_id, record.created_at, record.expires_at,
+        )  # fmt: skip
+
+    async def get(self, token_hash: str) -> PasswordResetRecord | None:
+        row = await self._conn.fetchrow(
+            "SELECT * FROM password_resets WHERE token_hash = $1", token_hash
+        )
+        if row is None:
+            return None
+        return PasswordResetRecord(
+            row["token_hash"], row["user_id"], row["created_at"], row["expires_at"], row["used_at"]
+        )
+
+    async def mark_used(self, token_hash: str, now: datetime) -> None:
+        await self._conn.execute(
+            "UPDATE password_resets SET used_at = $2 WHERE token_hash = $1", token_hash, now
+        )
+
+    async def latest_created_at(self, user_id: UUID) -> datetime | None:
+        value: datetime | None = await self._conn.fetchval(
+            "SELECT max(created_at) FROM password_resets WHERE user_id = $1", user_id
+        )
+        return value
 
 
 class PgEmailVerificationRepository:
@@ -345,4 +384,10 @@ class PgRefreshTokenRepository:
             "UPDATE refresh_tokens SET revoked_at = $2 "
             "WHERE token_hash = $1 AND revoked_at IS NULL",
             token_hash, now,
+        )  # fmt: skip
+
+    async def revoke_all(self, user_id: UUID, now: datetime) -> None:
+        await self._conn.execute(
+            "UPDATE refresh_tokens SET revoked_at = $2 WHERE user_id = $1 AND revoked_at IS NULL",
+            user_id, now,
         )  # fmt: skip

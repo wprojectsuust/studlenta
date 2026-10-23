@@ -2,6 +2,7 @@
 
 import asyncio
 import io
+import time
 from pathlib import Path
 
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -72,3 +73,23 @@ def rebuild_covers(media_root: Path, images: PillowImageInspector) -> int:
         thumb.write_bytes(images.to_jpeg(data, 640))
         done += 1
     return done
+
+
+def cleanup_orphan_covers(
+    media_root: Path, referenced: set[str], older_than_seconds: float = 86_400
+) -> list[str]:
+    """Удаляет обложки, на которые не ссылается ни одно событие и которые старше суток.
+
+    Порог возраста — чтобы не удалить обложку, загруженную только что для ещё не сохранённого
+    черновика. ``referenced`` — имена файлов без расширения.
+    """
+    removed: list[str] = []
+    cutoff = time.time() - older_than_seconds
+    for path in sorted((media_root / "covers").glob("*.jpg")):
+        stem = path.stem
+        if stem.endswith("-640") or stem in referenced or path.stat().st_mtime > cutoff:
+            continue
+        path.unlink()
+        path.with_name(f"{stem}-640.jpg").unlink(missing_ok=True)
+        removed.append(stem)
+    return removed

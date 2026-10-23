@@ -24,6 +24,7 @@ from studlenta.application.dto import (
     ModerationLogEntry,
     MyEventItem,
     Notification,
+    PasswordResetRecord,
     RefreshTokenRecord,
 )
 from studlenta.application.ports import FeedQuery
@@ -140,6 +141,26 @@ class InMemoryUsers:
 
     async def mark_email_verified(self, user_id: UUID, now: datetime) -> None:
         self.rows[user_id] = replace(self.rows[user_id], email_verified_at=now)
+
+    async def update_password(self, user_id: UUID, password_hash: str) -> None:
+        self.rows[user_id] = replace(self.rows[user_id], password_hash=password_hash)
+
+
+class InMemoryPasswordResets:
+    def __init__(self) -> None:
+        self.rows: dict[str, PasswordResetRecord] = {}
+
+    async def add(self, record: PasswordResetRecord) -> None:
+        self.rows[record.token_hash] = record
+
+    async def get(self, token_hash: str) -> PasswordResetRecord | None:
+        return self.rows.get(token_hash)
+
+    async def mark_used(self, token_hash: str, now: datetime) -> None:
+        self.rows[token_hash] = replace(self.rows[token_hash], used_at=now)
+
+    async def latest_created_at(self, user_id: UUID) -> datetime | None:
+        return max((r.created_at for r in self.rows.values() if r.user_id == user_id), default=None)
 
 
 class InMemoryEmailVerifications:
@@ -291,6 +312,11 @@ class InMemoryRefreshTokens:
         if token_hash in self.rows:
             self.rows[token_hash] = replace(self.rows[token_hash], revoked_at=now)
 
+    async def revoke_all(self, user_id: UUID, now: datetime) -> None:
+        for key, record in list(self.rows.items()):
+            if record.user_id == user_id and record.revoked_at is None:
+                self.rows[key] = replace(record, revoked_at=now)
+
 
 @dataclass
 class StubQueries:
@@ -348,6 +374,7 @@ class FakeUnitOfWork:
         self.notifications = InMemoryNotifications()
         self.refresh_tokens = InMemoryRefreshTokens()
         self.email_verifications = InMemoryEmailVerifications()
+        self.password_resets = InMemoryPasswordResets()
         self.queries = StubQueries()
         self.commits = 0
         self._snapshot: dict[str, Any] = {}
@@ -362,6 +389,7 @@ class FakeUnitOfWork:
             "notifications": list(self.notifications.rows),
             "tokens": dict(self.refresh_tokens.rows),
             "verifications": dict(self.email_verifications.rows),
+            "resets": dict(self.password_resets.rows),
         }
 
     def _restore(self, s: dict[str, Any]) -> None:
@@ -373,6 +401,7 @@ class FakeUnitOfWork:
         self.notifications.rows = s["notifications"]
         self.refresh_tokens.rows = s["tokens"]
         self.email_verifications.rows = s["verifications"]
+        self.password_resets.rows = s["resets"]
 
     def __call__(self) -> Self:
         return self

@@ -1,4 +1,6 @@
 import io
+import os
+import time
 from datetime import timedelta
 from pathlib import Path
 from uuid import uuid4
@@ -8,7 +10,12 @@ from PIL import Image
 
 from studlenta.domain.errors import AuthenticationError
 from studlenta.domain.users import Role, User
-from studlenta.infrastructure.files import LocalFileStorage, PillowImageInspector, rebuild_covers
+from studlenta.infrastructure.files import (
+    LocalFileStorage,
+    PillowImageInspector,
+    cleanup_orphan_covers,
+    rebuild_covers,
+)
 from studlenta.infrastructure.security import Argon2PasswordHasher, JwtTokenService
 from studlenta.infrastructure.settings import Settings
 from tests.fakes import NOW
@@ -142,3 +149,26 @@ class TestRebuildCovers:
         assert Image.open(covers / "old.jpg").width == 1600
         assert Image.open(covers / "old-640.jpg").width == 640
         assert rebuild_covers(tmp_path, PillowImageInspector()) == 0  # повторный запуск — ничего
+
+
+class TestOrphanCovers:
+    def test_removes_only_old_unreferenced_pairs(self, tmp_path: Path) -> None:
+        covers = tmp_path / "covers"
+        covers.mkdir()
+        for name in ("used", "orphan", "fresh"):
+            (covers / f"{name}.jpg").write_bytes(b"x")
+            (covers / f"{name}-640.jpg").write_bytes(b"x")
+        day_ago = time.time() - 2 * 86_400
+        for name in ("used", "orphan"):
+            for suffix in ("", "-640"):
+                os.utime(covers / f"{name}{suffix}.jpg", (day_ago, day_ago))
+
+        removed = cleanup_orphan_covers(tmp_path, {"used"}, older_than_seconds=86_400)
+
+        assert removed == ["orphan"]
+        assert sorted(p.name for p in covers.iterdir()) == [
+            "fresh-640.jpg",
+            "fresh.jpg",
+            "used-640.jpg",
+            "used.jpg",
+        ]

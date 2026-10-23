@@ -49,6 +49,15 @@ class TokenIn(_In):
     token: str
 
 
+class EmailIn(_In):
+    email: str
+
+
+class ResetPasswordIn(_In):
+    token: str
+    password: str
+
+
 class SentOut(BaseModel):
     sent: bool
 

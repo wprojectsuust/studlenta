@@ -11,6 +11,7 @@ from studlenta.application.dto import (
     ModerationLogEntry,
     Notification,
     NotificationKind,
+    PasswordResetRecord,
     RefreshTokenRecord,
 )
 from studlenta.domain.errors import ConflictError
@@ -270,3 +271,35 @@ class TestEmailVerifications:
         assert stored is not None
         assert stored.email_verified_at == NOW
         assert stored.is_verified
+
+
+class TestPasswordResets:
+    async def test_tokens_password_change_and_revoke_all(
+        self, pool: asyncpg.Pool, uow: PostgresUnitOfWork
+    ) -> None:
+        user = await make_user(pool)
+        other = await make_user(pool)
+        async with uow() as tx:
+            await tx.password_resets.add(
+                PasswordResetRecord("r1", user.id, NOW, NOW + timedelta(hours=1))
+            )
+            for owner, h in ((user, "t1"), (user, "t2"), (other, "t3")):
+                await tx.refresh_tokens.add(
+                    RefreshTokenRecord(h, owner.id, NOW + timedelta(days=30), None)
+                )
+            await tx.commit()
+        async with uow() as tx:
+            assert (await tx.password_resets.latest_created_at(user.id)) == NOW
+            await tx.password_resets.mark_used("r1", NOW)
+            await tx.users.update_password(user.id, "new-hash")
+            await tx.refresh_tokens.revoke_all(user.id, NOW)
+            await tx.commit()
+        async with uow() as tx:
+            record = await tx.password_resets.get("r1")
+            assert record is not None
+            assert record.used_at == NOW
+            stored = await tx.users.get(user.id)
+            assert stored is not None
+            assert stored.password_hash == "new-hash"
+            revoked = [(await tx.refresh_tokens.get(h)) for h in ("t1", "t2", "t3")]
+        assert [r.revoked_at is not None for r in revoked if r] == [True, True, False]

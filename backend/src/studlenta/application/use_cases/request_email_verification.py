@@ -2,34 +2,15 @@
 
 import logging
 from datetime import timedelta
-from html import escape
 
 from studlenta.application.dto import Actor, EmailMessage, EmailVerificationRecord
+from studlenta.application.emails import letter
 from studlenta.application.ports import Clock, EmailSender, TokenService, UnitOfWorkFactory
 from studlenta.domain.errors import AuthenticationError, ConflictError
 
 TOKEN_TTL = timedelta(hours=24)
 RESEND_COOLDOWN = timedelta(minutes=1)
 log = logging.getLogger(__name__)
-
-
-def _letter(name: str, link: str) -> tuple[str, str]:
-    text = (
-        f"{name}, здравствуйте!\n\n"
-        "Подтвердите почту, чтобы предлагать события в ленту Студленты УУНиТ:\n"
-        f"{link}\n\n"
-        "Ссылка действует сутки. Если вы не регистрировались — просто проигнорируйте письмо.\n"
-    )
-    html = (
-        f"<p>{escape(name)}, здравствуйте!</p>"
-        "<p>Подтвердите почту, чтобы предлагать события в ленту Студленты УУНиТ:</p>"
-        f'<p><a href="{escape(link)}" style="display:inline-block;padding:12px 20px;'
-        "background:#2B59E0;color:#FFFFFF;border-radius:10px;text-decoration:none;"
-        'font-weight:600">Подтвердить почту</a></p>'
-        f'<p style="color:#4B5563">Или откройте ссылку: {escape(link)}<br>'
-        "Ссылка действует сутки. Если вы не регистрировались — просто проигнорируйте письмо.</p>"
-    )
-    return text, html
 
 
 class RequestEmailVerification:
@@ -64,7 +45,13 @@ class RequestEmailVerification:
             )
             await uow.commit()
 
-        text, html = _letter(user.full_name, f"{self._link_base}?token={token}")
+        text, html = letter(
+            user.full_name,
+            "Подтвердите почту, чтобы предлагать события в ленту Студленты УУНиТ:",
+            f"{self._link_base}?token={token}",
+            "Подтвердить почту",
+            "Ссылка действует сутки. Если вы не регистрировались — просто проигнорируйте письмо.",
+        )
         try:
             await self._mailer.send(
                 EmailMessage(user.email, "Подтвердите почту — Студлента УУНиТ", text, html)

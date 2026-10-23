@@ -14,7 +14,7 @@ from studlenta.infrastructure.db.migrate import apply_migrations
 
 TABLES = (
     "users, events, likes, favorites, moderation_log, notifications, refresh_tokens, "
-    "email_verifications"
+    "email_verifications, password_resets"
 )
 
 

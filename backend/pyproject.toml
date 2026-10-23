@@ -43,6 +43,7 @@ studlenta-migrate = "studlenta.infrastructure.db.migrate:main"
 studlenta-create-user = "studlenta.presentation.cli:create_user"
 studlenta-send-reminders = "studlenta.presentation.cli:send_reminders"
 studlenta-rebuild-covers = "studlenta.presentation.cli:rebuild_covers"
+studlenta-cleanup-media = "studlenta.presentation.cli:cleanup_media"
 
 [tool.ruff]
 line-length = 100
