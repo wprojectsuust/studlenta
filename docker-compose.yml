@@ -1,5 +1,5 @@
 # Локальная разработка: `docker compose up -d db` — только база;
-# `docker compose up --build` — база + API на http://localhost:8000/api/v1/docs
+# `docker compose up --build` — база + API + фронтенд на http://localhost:3000/studlenta
 services:
   db:
     image: postgres:16-alpine
@@ -24,8 +24,19 @@ services:
       STUDLENTA_JWT_SECRET: ${STUDLENTA_JWT_SECRET:-dev-only-secret-change-me-0123456789abcdef}
       STUDLENTA_SECURE_COOKIES: "false"
       STUDLENTA_MEDIA_ROOT: /app/media
+      STUDLENTA_ROOT_PATH: /studlenta
     ports: ["8000:8000"]
     volumes: [media:/app/media]
+
+  web:
+    build:
+      context: ./frontend
+      args: { PUBLIC_ORIGIN: "http://localhost:3000" }
+    depends_on:
+      api: { condition: service_healthy }
+    environment:
+      API_INTERNAL_URL: http://api:8000
+    ports: ["3000:3000"]
 
 volumes:
   pgdata:
