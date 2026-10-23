@@ -8,7 +8,7 @@ from PIL import Image
 
 from studlenta.domain.errors import AuthenticationError
 from studlenta.domain.users import Role, User
-from studlenta.infrastructure.files import LocalFileStorage, PillowImageInspector
+from studlenta.infrastructure.files import LocalFileStorage, PillowImageInspector, rebuild_covers
 from studlenta.infrastructure.security import Argon2PasswordHasher, JwtTokenService
 from studlenta.infrastructure.settings import Settings
 from tests.fakes import NOW
@@ -101,3 +101,44 @@ class TestSettings:
         monkeypatch.setenv("STUDLENTA_JWT_SECRET", "short")
         with pytest.raises(ValueError, match="jwt_secret"):
             Settings(_env_file=None)  # type: ignore[call-arg]
+
+
+class TestCoverProcessing:
+    def test_resizes_rotates_and_strips_metadata(self) -> None:
+        # Фото «с телефона»: 2400×1350, повёрнуто EXIF-тегом и с GPS-координатами внутри
+        exif = Image.Exif()
+        exif[0x0112] = 6  # Orientation: повернуть на 90°
+        exif[0x0110] = "Pixel 7"  # модель телефона
+        gps = exif.get_ifd(0x8825)
+        gps[1], gps[2] = "N", (54.0, 44.0, 0.0)  # широта Уфы
+        buf = io.BytesIO()
+        Image.new("RGB", (2400, 1350), "#7C3AED").save(buf, "JPEG", exif=exif, quality=95)
+        original = buf.getvalue()
+        assert Image.open(io.BytesIO(original)).getexif().get_ifd(0x8825)  # GPS действительно есть
+
+        images = PillowImageInspector()
+        big = Image.open(io.BytesIO(images.to_jpeg(original, 1600)))
+        small = Image.open(io.BytesIO(images.to_jpeg(original, 640)))
+
+        assert big.format == "JPEG"
+        assert (big.width, big.height) == (1350, 2400)  # поворот применён; уже 1600 — не трогаем
+        assert small.width == 640
+        assert not big.getexif()  # GPS и прочие метаданные удалены
+        assert not small.getexif()
+
+    def test_wide_images_are_limited_to_max_width(self) -> None:
+        jpeg = PillowImageInspector().to_jpeg(png(3000, 1500, "PNG"), 1600)
+        out = Image.open(io.BytesIO(jpeg))
+        assert out.size == (1600, 800)
+        assert len(jpeg) < len(png(3000, 1500, "PNG"))
+
+
+class TestRebuildCovers:
+    def test_shrinks_originals_and_adds_thumbnails_once(self, tmp_path: Path) -> None:
+        covers = tmp_path / "covers"
+        covers.mkdir()
+        (covers / "old.jpg").write_bytes(png(1920, 1080, "JPEG"))
+        assert rebuild_covers(tmp_path, PillowImageInspector()) == 1
+        assert Image.open(covers / "old.jpg").width == 1600
+        assert Image.open(covers / "old-640.jpg").width == 640
+        assert rebuild_covers(tmp_path, PillowImageInspector()) == 0  # повторный запуск — ничего

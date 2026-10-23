@@ -159,8 +159,11 @@ class TestUploadCover:
     ) -> None:
         author = await add_user(uow, 1)
         url = await UploadCover(storage, FakeImageInspector(), ids)(author, b"jpegdata")
-        assert url == "/media/covers/00000000-0000-0000-0000-000000000001.jpg"
-        assert storage.files["covers/00000000-0000-0000-0000-000000000001.jpg"] == b"jpegdata"
+        name = "covers/00000000-0000-0000-0000-000000000001"
+        assert url == f"/media/{name}.jpg"
+        # Сохраняем не исходник, а пересжатую копию и превью для ленты
+        assert storage.files[f"{name}.jpg"] == b"cover:1600:jpegdata"
+        assert storage.files[f"{name}-640.jpg"] == b"cover:640:jpegdata"
 
     @pytest.mark.parametrize(
         ("info", "size", "message"),

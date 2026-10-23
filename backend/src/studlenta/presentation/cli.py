@@ -52,6 +52,15 @@ def create_user() -> None:  # pragma: no cover - интерактивная об
     asyncio.run(run())
 
 
+def rebuild_covers() -> None:  # pragma: no cover - разовая команда обслуживания
+    from studlenta.infrastructure.files import PillowImageInspector
+    from studlenta.infrastructure.files import rebuild_covers as rebuild
+    from studlenta.infrastructure.settings import Settings
+
+    settings = Settings()  # type: ignore[call-arg]
+    print(f"Обновлено обложек: {rebuild(settings.media_root, PillowImageInspector())}")
+
+
 def send_reminders() -> None:  # pragma: no cover - запускается по расписанию
     async def run() -> int:
         pool = await _with_pool()

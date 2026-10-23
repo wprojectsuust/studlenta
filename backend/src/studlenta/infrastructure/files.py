@@ -4,7 +4,7 @@ import asyncio
 import io
 from pathlib import Path
 
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 from studlenta.application.dto import ImageInfo
 
@@ -38,3 +38,37 @@ class PillowImageInspector:
                 return ImageInfo(fmt, image.width, image.height) if fmt else None
         except (UnidentifiedImageError, OSError, SyntaxError, ValueError):
             return None
+
+    def to_jpeg(self, data: bytes, max_width: int) -> bytes:
+        with Image.open(io.BytesIO(data)) as source:
+            image = ImageOps.exif_transpose(source)
+            if image.mode in ("RGBA", "LA", "P"):
+                image = image.convert("RGBA")
+                background = Image.new("RGB", image.size, "#FFFFFF")
+                background.paste(image, mask=image.getchannel("A"))
+                image = background
+            else:
+                image = image.convert("RGB")
+            if image.width > max_width:
+                height = round(image.height * max_width / image.width)
+                image = image.resize((max_width, height), Image.Resampling.LANCZOS)
+            out = io.BytesIO()
+            # Без exif=… Pillow метаданные не пишет — GPS и модель телефона не утекут.
+            image.save(out, "JPEG", quality=82, optimize=True, progressive=True)
+            return out.getvalue()
+
+
+def rebuild_covers(media_root: Path, images: PillowImageInspector) -> int:
+    """Обложки, загруженные до появления превью: пересжать и добавить ``-640``. Идемпотентно."""
+    done = 0
+    for path in sorted((media_root / "covers").glob("*.jpg")):
+        if path.stem.endswith("-640"):
+            continue
+        thumb = path.with_name(f"{path.stem}-640.jpg")
+        if thumb.exists():
+            continue
+        data = path.read_bytes()
+        path.write_bytes(images.to_jpeg(data, 1600))
+        thumb.write_bytes(images.to_jpeg(data, 640))
+        done += 1
+    return done

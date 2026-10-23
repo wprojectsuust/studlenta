@@ -97,6 +97,9 @@ class FakeImageInspector:
     def inspect(self, data: bytes) -> ImageInfo | None:
         return self.info
 
+    def to_jpeg(self, data: bytes, max_width: int) -> bytes:
+        return b"cover:%d:" % max_width + data
+
 
 class InMemoryEvents:
     def __init__(self) -> None:
