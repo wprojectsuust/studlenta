@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /studlenta/
+Disallow: /studlenta/my
+Disallow: /studlenta/moderation
