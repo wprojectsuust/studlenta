@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+dist/
+*.egg-info/
+
+# Окружение и данные
+.env
+backend/media/
+
+# Node (frontend)
+node_modules/
+frontend/dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp

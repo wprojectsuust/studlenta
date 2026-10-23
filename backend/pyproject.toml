@@ -1,0 +1,109 @@
+[project]
+name = "studlenta"
+version = "0.1.0"
+description = "Студлента УУНиТ: лента студенческих событий с предмодерацией (API)"
+readme = "README.md"
+authors = [
+    { name = "karrad", email = "karad120109@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "argon2-cffi>=25.1.0",
+    "asyncpg>=0.32.0",
+    "fastapi>=0.161.1",
+    "pillow>=13.0.0",
+    "pydantic-settings>=2.16.1",
+    "pyjwt>=2.15.1",
+    "python-multipart>=0.0.32",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.22,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "asyncpg-stubs>=0.32.0",
+    "httpx>=0.28.1",
+    "import-linter>=2.15",
+    "mypy>=2.4.0",
+    "pre-commit>=4.7.0",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.17.2",
+    "testcontainers[postgres]>=4.15.0",
+]
+
+[project.scripts]
+studlenta-migrate = "studlenta.infrastructure.db.migrate:main"
+studlenta-create-user = "studlenta.presentation.cli:create_user"
+studlenta-send-reminders = "studlenta.presentation.cli:send_reminders"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "ASYNC", "S", "RUF", "PT", "N", "C4", "DTZ", "TID"]
+ignore = ["RUF001", "RUF002", "RUF003"]  # кириллица в строках и комментариях — норма
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]
+# В SQL склеиваются только константы модуля (списки колонок, общий SELECT); все значения
+# от пользователя идут параметрами $1..$N. Правило S608 здесь даёт только ложные срабатывания.
+"src/studlenta/infrastructure/db/*" = ["S608"]
+
+[tool.mypy]
+strict = true
+python_version = "3.13"
+mypy_path = "src"
+packages = ["studlenta"]
+
+[[tool.mypy.overrides]]
+module = ["testcontainers.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+markers = [
+    "integration: SQL-репозитории на настоящем PostgreSQL",
+    "e2e: сценарии через HTTP API на настоящем PostgreSQL",
+]
+addopts = "--strict-markers -ra"
+
+[tool.coverage.run]
+source = ["studlenta"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+skip_covered = true
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError", "\\.\\.\\."]
+
+[tool.importlinter]
+root_package = "studlenta"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Onion: внутренние слои не знают о внешних"
+type = "layers"
+layers = [
+    "studlenta.presentation",
+    "studlenta.infrastructure",
+    "studlenta.application",
+    "studlenta.domain",
+]
+
+[[tool.importlinter.contracts]]
+name = "Домен не зависит от фреймворков и драйверов"
+type = "forbidden"
+source_modules = ["studlenta.domain", "studlenta.application"]
+forbidden_modules = ["fastapi", "starlette", "asyncpg", "pydantic", "jwt", "argon2", "PIL"]
